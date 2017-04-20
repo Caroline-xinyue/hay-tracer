@@ -1,8 +1,7 @@
 module DataTypes where
 
 import Prelude
-import Data.Vector
-import Data.Matrix
+
 
 type Point = Vec3
 type Color = Vec3

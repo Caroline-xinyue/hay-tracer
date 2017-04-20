@@ -1,6 +1,8 @@
 module Xinyue where
 
 import DataTypes
+import qualified Data.Vector as V
+import qualified Data.Matrix as M
 
 -- Given ray, determine if the ray intersects with any object
 intersect :: Ray -> Int
@@ -19,5 +21,5 @@ viewTransform :: Camera -> Vec3
 viewTransform = error "Not Implemented"
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: Image -> Vec3 -> Double -> Matrix Vec3
+sendRay :: Image -> Vec3 -> Double -> M.Matrix Vec3
 sendRay = error "Not Implemented"

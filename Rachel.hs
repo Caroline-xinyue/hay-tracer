@@ -1,18 +1,20 @@
 module Rachel where
 
 import DataTypes
+import qualified Data.Vector as V
+import qualified Data.Matrix as M
 
 -- Read input file into various GADTs
-readObjects :: String -> Vector Object
+readObjects :: String -> V.Vector Object
 readObjects = error "Not Implemented"
 
-readPigments :: String -> Vector Pigment
+readPigments :: String -> V.Vector Pigment
 readPigments = error "Not Implemented"
 
-readSurfaces :: String -> Vector Surface
+readSurfaces :: String -> V.Vector Surface
 readSurfaces = error "Not Implemented"
 
-readLights :: String -> Vector Light
+readLights :: String -> V.Vector Light
 readLights = error "Not Implemented"
 
 readImage :: String -> Image
@@ -22,7 +24,7 @@ readCamera :: String -> Camera
 readCamera = error "Not Implemented"
 
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
-write_ppm6 :: String -> Image -> Matrix  -> IO()
+write_ppm6 :: String -> Image -> M.Matrix Vec3 -> IO()
 write_ppm6 = error "Not Implemented"
 
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
