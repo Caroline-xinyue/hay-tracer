@@ -1,13 +1,15 @@
 module DataTypes where
 
 import Prelude
+import Data.Vector
+import Data.Matrix
 
-type String = [Char]
 type Point = Vec3
 type Color = Vec3
 
 data Vec3 = Vec3 Double Double Double
 data Vec4 = Vec4 Double Double Double Double
+
 -- Sphere Vec3 (center) Double (radius) | Plane Vec4 (coefficients)
 data Object = Sphere Vec3 Double | Plane Vec4
 -- Camera Point (camera pos) Point (at point) Vec3 (up Vec3tor) Double (fovy)
