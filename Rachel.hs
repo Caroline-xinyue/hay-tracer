@@ -10,7 +10,6 @@ readObjects = error "Not Implemented"
 
 readPigments :: String -> V.Vector Pigment
 readPigments = error "Not Implemented"
-
 readSurfaces :: String -> V.Vector Surface
 readSurfaces = error "Not Implemented"
 
