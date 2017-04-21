@@ -2,11 +2,11 @@ module DataTypes where
 
 import Prelude
 
-
 type Point = Vec3
 type Color = Vec3
 
 data Vec3 = Vec3 Double Double Double
+  deriving Show
 data Vec4 = Vec4 Double Double Double Double
 
 -- Sphere Vec3 (center) Double (radius) | Plane Vec4 (coefficients)
