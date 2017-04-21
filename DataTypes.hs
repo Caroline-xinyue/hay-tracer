@@ -11,7 +11,7 @@ data Vec4 = Vec4 Double Double Double Double
   deriving Show
 
 -- Sphere Vec3 (center) Double (radius) | Plane Vec4 (coefficients)
-data Object = Sphere Vec3 Double | Plane Vec4
+data Object = Sphere Vec3 Double Int Int | Plane Vec4 Int Int
   deriving Show
 -- Camera Point (camera pos) Point (at point) Vec3 (up Vec3tor) Double (fovy)
 data Camera = Camera Point Point Vec3 Double

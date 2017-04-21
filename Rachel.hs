@@ -13,8 +13,17 @@ import qualified Data.ByteString.Conversion as DBC
 import qualified Data.Double.Conversion.ByteString as DD
 
 -- Read input file into various GADTs
-readObjects :: String -> [Object]
-readObjects = error "Not Implemented"
+readObjects :: [String] -> [Object]
+readObjects [] = []
+readObjects (x : xs) = obj : readObjects xs where
+  nums = strToDoubles (unwords (filter (\str -> str /= "sphere" && str /= "plane") (words x)))
+  obj = case nums of
+    (a:b:c:d:e:f:_) -> case ((words x) !! 2) of
+      "sphere" -> Sphere (Vec3 c d e) f (round a) (round b)
+      "plane"  -> Plane (Vec4 c d e f) (round a) (round b)
+      otherwise -> error "unknown object"
+    _ -> error "object data corrupted"
+
 
 readPigments :: [String] -> [Pigment]
 readPigments [] = []
