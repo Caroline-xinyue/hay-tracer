@@ -4,6 +4,7 @@ import Prelude
 import DataTypes
 import Data.Word
 import System.IO
+import qualified Data.List as L
 import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Data.ByteString.Lazy as BIN
@@ -15,12 +16,21 @@ import qualified Data.Double.Conversion.ByteString as DD
 readObjects :: String -> [Object]
 readObjects = error "Not Implemented"
 
-readPigments :: String -> [Pigment]
-readPigments = error "Not Implemented"
+readPigments :: [String] -> [Pigment]
+readPigments [] = []
+readPigments (x : xs) = pig : readPigments xs where
+  pig = case ((words x) !! 0) of
+    "solid" -> Solid ((strToVec3s (drop 6 x)) !! 0)
+    "checker" -> CheckerBoard ((strToVec3s (drop 8 x)) !! 0) ((strToVec3s (drop 8 x)) !! 1) ((strToDoubles (drop 8 x)) !! 6)
 
-readSurfaces :: String -> [Surface]
-readSurfaces = error "Not Implemented"
+readSurfaces :: [String] -> [Surface]
+readSurfaces [] = []
+readSurfaces (x : xs) = surface : readSurfaces xs where
+  doubles = strToDoubles x
+  surface = case doubles of
+    (a:b:c:d:e:f:g:_) -> Surface (PhongCoef a b c d) e f g
 
+-- TODO: What should we do with the number of lights in the input file?
 readLights :: [String] -> [Light]
 readLights [] = []
 readLights (x : xs) = light : readLights xs where
@@ -28,7 +38,10 @@ readLights (x : xs) = light : readLights xs where
   light = Light (vecs !! 0) (vecs !! 1) (vecs !! 2)
 
 readImage :: String -> Image
-readImage = error "Not Implemented"
+readImage str = Image w h where
+  dimensions = strToDoubles str
+  w = round $ dimensions !! 0
+  h = round $ dimensions !! 1
 
 readCamera :: [String] -> Camera
 readCamera (camera : at : up : fovy : []) = Camera c a u f where
@@ -56,6 +69,8 @@ doublesToVec3 :: [Double] -> Vec3
 doublesToVec3 ds
   | length ds == 3 = Vec3 (ds !! 0) (ds !! 1) (ds !! 2)
   | otherwise = error "list length is not 3"
+
+-- =======================================================================
 
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
 getIntersect :: Ray -> Object -> Double
