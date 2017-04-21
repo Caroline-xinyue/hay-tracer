@@ -2,7 +2,6 @@ module DataTypes where
 
 import Prelude
 
-
 type Point = Vec3
 type Color = Vec3
 
