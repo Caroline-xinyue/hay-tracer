@@ -1,35 +1,10 @@
 module Xinyue where
 
 import DataTypes
+import Util
 import Rachel
 import qualified Data.Vector as V
 import qualified Data.Matrix as M
-
-data Vector3 a = Vector3 a a a
-
-minus :: Vec3 -> Vec3 -> Vec3
-minus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
-
-plus :: Vec3 -> Vec3 -> Vec3
-plus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
-
-multScaler :: Vec3 -> Double -> Vec3
-multScaler (Vec3 x y z) k = Vec3 (k * x) (k * y) (k * z)
-
-normalize :: Vec3 -> Vec3
-normalize (Vec3 x1 y1 z1) =
-  let invlen = 1.0 / (sqrt ((x1 * x1) + (y1 * y1) + (z1 * z1))) in
-    Vec3 (x1 * invlen) (y1 * invlen) (z1 * invlen)
-
-dot :: Vec3 -> Vec3 -> Double
-dot (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = (x1 * x2) + (y1 * y2) + (z1 * z2)
-
-cross :: Vec3 -> Vec3 -> Vec3
-cross (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) =
-  Vec3
-  ((y1 * z2) - (z1 * y2))
-  ((z1 * x2) - (x1 * z2))
-  ((x1 * y2) - (y1 * x2))
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> Color
@@ -58,6 +33,7 @@ reflection = error "Not Implemented"
 refraction :: Ray -> [Surface] -> [Object] -> Color
 refraction = error "Not Implemented"
 
+{-
 clampVec :: Vec3 -> Vec3 -> Vec3 -> Vec3
 clampVec (Vec3 minx miny minz) (Vec3 x y z) (Vec3 maxx maxy maxz)
   = Vec3 (clamp minx x maxx) (clamp miny y maxy) (clamp minz z maxz)
@@ -67,6 +43,11 @@ clamp min x max
  | x < min = min
  | x > max = max
  | otherwise = x
+-}
+
+clamp :: Vec3 -> Vec3
+clamp (Vec3 r g b) = Vec3 (clampdouble r) (clampdouble g) (clampdouble b)
+                where clampdouble f = (max 0.0 (min 1.0 f))
 
 -- Given ray and depth, compute lighting, namely local + reflection + refraction
 trace :: Ray -> [Surface] -> [Object] -> [Light] -> Int -> Color
@@ -81,15 +62,29 @@ viewTransform (Camera pos at up _) = Vector3 cx cy cz where
   cx = normalize (cross up cz)
   cy = cross cz cx
 
+getViewDimension :: Image -> Camera -> Vector2 Double
+getViewDimension (Image img_width img_height) (Camera _ _ _ fovy) = Vector2 width height where
+  aspectratio = (fromIntegral img_width) / (fromIntegral img_height)
+  height = 2 * tan (radians (0.5 * fovy))
+  width = height * aspectratio
+
+constructRay :: Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> Ray
+constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _) _ _ _
+  = let (Vector3 cx cy cz) = viewTransform camera
+        (Vector2 width height) = getViewDimension image camera
+        pc = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
+        pr = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
+        dir = normalize (plus (plus (multScaler cx pc) (multScaler cy pr)) (multScaler cz (-1)))
+    in Ray pos dir
+
 {-
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: Image -> Camera -> M.Matrix Vec3
--- sendRay (Image width height) (Vec3 x y z) (Camera _ _ _ fovy) =
-sendRay image@(Image width height) camera@(Camera pos at up fovy)
-  = let view@(Vec3 cx cy cz) = viewTransform camera
-        aspectratio = width / fromIntegral height
-        h = 2 * tan (radians (0.5 * fovy))
-        w = h * aspectratio
-    in
+sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
+sendRay image@(Image 0 0) camera surfaces objects lights
+sendRay image@(Image width height) camera@(Camera pos at up fovy) surfaces objects lights
+
+in trace ray surfaces objects lights 0
 -}
 -- sendRay = error "Not Implemented"
+
+image_data = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
