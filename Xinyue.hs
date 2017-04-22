@@ -45,10 +45,6 @@ clamp min x max
  | otherwise = x
 -}
 
-clamp :: Vec3 -> Vec3
-clamp (Vec3 r g b) = Vec3 (clampdouble r) (clampdouble g) (clampdouble b)
-                where clampdouble f = (max 0.0 (min 1.0 f))
-
 -- Given ray and depth, compute lighting, namely local + reflection + refraction
 trace :: Ray -> [Surface] -> [Object] -> [Light] -> Int -> Color
 trace ray@(Ray _ _) _ objs lights depth =
@@ -65,26 +61,35 @@ viewTransform (Camera pos at up _) = Vector3 cx cy cz where
 getViewDimension :: Image -> Camera -> Vector2 Double
 getViewDimension (Image img_width img_height) (Camera _ _ _ fovy) = Vector2 width height where
   aspectratio = (fromIntegral img_width) / (fromIntegral img_height)
-  height = 2 * tan (radians (0.5 * fovy))
-  width = height * aspectratio
+  height      = 2 * tan (radians (0.5 * fovy))
+  width       = height * aspectratio
 
 constructRay :: Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> Ray
 constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _) _ _ _
-  = let (Vector3 cx cy cz) = viewTransform camera
+  = let (Vector3 cx cy cz)     = viewTransform camera
         (Vector2 width height) = getViewDimension image camera
-        pc = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
-        pr = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
+        pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
+        pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
         dir = normalize (plus (plus (multScaler cx pc) (multScaler cy pr)) (multScaler cz (-1)))
     in Ray pos dir
 
-{-
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
-sendRay image@(Image 0 0) camera surfaces objects lights
-sendRay image@(Image width height) camera@(Camera pos at up fovy) surfaces objects lights
-
-in trace ray surfaces objects lights 0
--}
--- sendRay = error "Not Implemented"
+sendRay :: M.Matrix Color -> Image -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
+sendRay mat image@(Image img_width img_height) camera surfaces objects lights = sendRayPixel mat image (img_height - 1, img_width - 1) camera surfaces objects lights where
+  sendRayPixel :: M.Matrix Color -> Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
+  sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights
+    = let ray   = constructRay image pixel camera surfaces objects lights
+          color = trace ray surfaces objects lights 0
+      in writePixel mat 0 0 color
+  sendRayPixel mat image@(Image img_width _) pixel@(r, 0) camera surfaces objects lights
+    = let ray         = constructRay image pixel camera surfaces objects lights
+          color       = trace ray surfaces objects lights 0
+          mat_written = writePixel mat r 0 color
+      in sendRayPixel mat_written image (r - 1, img_width - 1) camera surfaces objects lights
+  sendRayPixel mat image pixel@(r, c) camera surfaces objects lights
+    = let ray         = constructRay image pixel camera surfaces objects lights
+          color       = trace ray surfaces objects lights 0
+          mat_written = writePixel mat r c color
+      in sendRayPixel mat_written image (r, c - 1) camera surfaces objects lights
 
 image_data = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
