@@ -8,8 +8,8 @@ import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Data.ByteString.Lazy as BIN
 import qualified Data.ByteString.Char8 as DBC8
-import qualified Data.ByteString.Conversion as DBC
-import qualified Data.Double.Conversion.ByteString as DD
+-- import qualified Data.ByteString.Conversion as DBC
+-- import qualified Data.Double.Conversion.ByteString as DD
 
 -- Read input file into various GADTs
 readObjects :: String -> [Object]
@@ -85,10 +85,10 @@ writePixel :: M.Matrix Color -> Int -> Int -> Color -> M.Matrix Color
 writePixel mat x y c = M.setElem c (x, y) mat
 
 getWidth :: Image -> Int
-getWidth (Image x y) = x
+getWidth (Image x _) = x
 
 getHeight :: Image -> Int
-getHeight (Image x y) = y
+getHeight (Image _ y) = y
 
 matrixToList :: M.Matrix Color -> [(Double, Double, Double)]
 matrixToList m = concatMap vec3ListToTuple (M.toLists m)

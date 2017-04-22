@@ -10,6 +10,11 @@ data Vec3 = Vec3 Double Double Double
 data Vec4 = Vec4 Double Double Double Double
   deriving Show
 
+data Vector2 a = Vector2 a a
+  deriving Show
+data Vector3 a = Vector3 a a a
+  deriving Show
+
 -- Sphere Vec3 (center) Double (radius) | Plane Vec4 (coefficients)
 data Object = Sphere Vec3 Double | Plane Vec4
   deriving Show
