@@ -3,7 +3,7 @@ module Xinyue where
 import DataTypes
 import Util
 import Rachel
-import qualified Data.Vector as V
+-- import qualified Data.Vector as V
 import qualified Data.Matrix as M
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
