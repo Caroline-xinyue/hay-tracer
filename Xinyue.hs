@@ -74,8 +74,8 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: M.Matrix Color -> Image -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
-sendRay mat image@(Image img_width img_height) camera surfaces objects lights = sendRayPixel mat image (img_height - 1, img_width - 1) camera surfaces objects lights where
+sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
+sendRay image@(Image img_width img_height) camera surfaces objects lights = sendRayPixel image_data image (img_height - 1, img_width - 1) camera surfaces objects lights where
   sendRayPixel :: M.Matrix Color -> Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> M.Matrix Color
   sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights
     = let ray   = constructRay image pixel camera surfaces objects lights
