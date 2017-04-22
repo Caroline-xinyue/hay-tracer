@@ -74,7 +74,7 @@ phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx
 phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
         finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
-    in plus finalColor (phong ray intersectPt intersectObj objs lights surfaces pigments)
+    in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
 
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
