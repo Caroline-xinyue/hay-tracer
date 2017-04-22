@@ -12,7 +12,9 @@ import qualified Data.ByteString.Char8 as DBC8
 import qualified Data.ByteString.Conversion as DBC
 import qualified Data.Double.Conversion.ByteString as DD
 
+-- ========================================================================
 -- Read input file into various GADTs
+
 readObjects :: [String] -> [Object]
 readObjects [] = []
 readObjects (x : xs) = obj : readObjects xs where
@@ -83,11 +85,13 @@ doublesToVec3 ds
 
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
 getIntersect :: Ray -> Object -> Double
-getIntersect = error "Not Implemented"
+getIntersect ray sphere@(Sphere _ _ _ _) = error "not implemented"
+getIntersect ray plane@(Plane _ _ _) = error "not implemented"
+
 
 -- Given a specific object and the point on object, compute the normal vector
 getNormal :: Object -> Point -> Vec3
-getNormal = error "Not Implemented"
+getNormal (Sphere center _ _ _) point = error "not implemented"
 
 
 -- ========================================================================
