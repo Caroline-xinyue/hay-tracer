@@ -38,37 +38,43 @@ checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
     in if point < 0 || point > vdistance intersectPt light_pos then checkVisible shadow_ray intersectPt light objs
        else False
 
-lit :: Ray -> Light -> Point -> Object -> [Surface] -> [Pigment] -> Color
-lit ray light@(Light pos _ _) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) surfaces pigments
+lit :: Ray -> Light -> Point -> Object -> [Object] -> [Surface] -> [Pigment] -> Color
+lit ray light@(Light pos _ _) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs surfaces pigments
   = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! pigmentIdx) intersectPt
         light_dir = minus pos intersectPt
         diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
         specularCol = calcSpecular ks alpha ray light_dir normal
-    in plus diffuseCol specularCol
-lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) surfaces pigments
+        n_dir = normalize light_dir
+        shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
+        visible = checkVisible shadow_ray intersectPt light objs
+    in if visible then plus diffuseCol specularCol
+       else Vec3 0 0 0
+lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs surfaces pigments
   = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! pigmentIdx) intersectPt
         light_dir = minus pos intersectPt
         diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
         specularCol = calcSpecular ks alpha ray light_dir normal
-    in plus diffuseCol specularCol
+        n_dir = normalize light_dir
+        shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
+        visible = checkVisible shadow_ray intersectPt light objs
+    in if visible then plus diffuseCol specularCol
+       else Vec3 0 0 0
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
-{-
-phong ray@(Ray origin direction) intersectPt intersectObj objs [] _ _
+phong ray _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
-phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (Light _ color _ : lights) surfaces pigments
-  = let (PhongCoef ka kd ks alpha) = getSurfaceParam surfaces surfaceIdx
-        normal  = getNormal intersectObj intersectPt
-        diffuse = getColor (pigments !! pigmentIdx) intersectPt
-        finalColor = 0.1 * color * ka
-    in
--}
-phong = error "Not Implemented"
+phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
+  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+    in multScaler col (0.1 * ka)
+phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
+  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+        finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
+    in plus finalColor (phong ray intersectPt intersectObj objs lights surfaces pigments)
 
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
