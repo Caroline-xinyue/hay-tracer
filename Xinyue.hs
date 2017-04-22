@@ -6,6 +6,19 @@ import Rachel
 import qualified Data.Vector as V
 import qualified Data.Matrix as M
 
+calcDiffuse :: Double -> Ray -> Light -> Point -> Vec3 -> Vec3 -> Color
+calcDiffuse kd (Ray _ dir) (Light source light_col (Vec3 a1 a2 a3)) point diffuse normal
+  | kd <= 0 = Vec3 0 0 0
+  | otherwise =
+    let light_dir = minus source point
+        new_normal = if (dot normal dir) > 0 then (multScaler normal (-1)) else normal
+        diffuseIntensity = dot light_dir new_normal
+        dist_to_light = vlength light_dir
+        att = a1 + a2 * dist_to_light + a3 * (dist_to_light ** 2)
+        attenuation = if att == 0 then 0.0001 else att in
+        if diffuseIntensity <= 0 then Vec3 0 0 0 else
+          multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
+
 getSurfaceParam :: [Surface] -> Int -> Maybe PhongCoef
 getSurfaceParam [] _                = Nothing
 getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> Just phongCoef

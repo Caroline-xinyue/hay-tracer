@@ -19,6 +19,7 @@ main = do
   sfInputs <- replicateM (read sfNum :: Int) getLine
   objNum <- getLine
   objInputs <- replicateM (read objNum :: Int) getLine
+  putStrLn fileName
   print (readImage dimensions)
   print (readCamera cameraInputs)
   print (readLights lightInputs)

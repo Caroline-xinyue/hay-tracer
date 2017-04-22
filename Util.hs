@@ -10,6 +10,9 @@ plus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
 vlength :: Vec3 -> Double
 vlength vec = sqrt (dot vec vec)
 
+mult :: Vec3 -> Vec3 -> Vec3
+mult (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 * x2) (y1 * y2) (z1 * z2)
+
 multScaler :: Vec3 -> Double -> Vec3
 multScaler (Vec3 x y z) k = Vec3 (k * x) (k * y) (k * z)
 
