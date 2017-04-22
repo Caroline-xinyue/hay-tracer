@@ -56,7 +56,6 @@ readSurfaces (x : xs) = surface : readSurfaces xs where
     (a:b:c:d:e:f:g:_) -> Surface (PhongCoef a b c d) e f g
     _ -> error "surface data corrupted"
 
--- TODO: What should we do with the number of lights in the input file?
 readLights :: [String] -> [Light]
 readLights [] = []
 readLights (x : xs) = light : readLights xs where
@@ -135,8 +134,8 @@ getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 -- ========================================================================
 -- TODO: Change function names to match the actual arguments
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
-write_ppm6 :: String -> Image -> M.Matrix Color -> IO()
-write_ppm6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
+write_ppm3 :: String -> Image -> M.Matrix Color -> IO()
+write_ppm3 str img mat = writePPM str img (doublesToBStrings (matrixToList mat))
 
 stringPPM :: Image -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)] -> BIN.ByteString
 stringPPM image ps =
@@ -166,8 +165,8 @@ vec3ListToTuple (x : xs) = vec3ToTuple x : vec3ListToTuple xs
 vec3ToTuple :: Vec3 -> (Double, Double, Double)
 vec3ToTuple (Vec3 x y z) = (x, y, z)
 
-doublesToWords :: [(Double, Double, Double)] -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)]
-doublesToWords ds = map (\(d1, d2, d3) -> (dToB d1, dToB d2, dToB d3)) ds
+doublesToBStrings :: [(Double, Double, Double)] -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)]
+doublesToBStrings ds = map (\(d1, d2, d3) -> (dToB d1, dToB d2, dToB d3)) ds
 
 dToB :: Double -> BIN.ByteString
 dToB d = BIN.fromChunks [DBC8.pack (show d)]
