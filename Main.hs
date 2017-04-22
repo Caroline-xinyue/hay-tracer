@@ -26,3 +26,10 @@ main = do
   print (readPigments pigInputs)
   print (readSurfaces sfInputs)
   print (readObjects objInputs)
+  let image    = readImage dimensions
+      camera   = readCamera cameraInputs
+      lights   = readLights lightInputs
+      pigments = readPigments pigInputs
+      surfaces = readSurfaces sfInputs
+      objects  = readObjects objInputs
+  write_ppm3 fileName image (sendRay image camera surfaces objects lights pigments)
