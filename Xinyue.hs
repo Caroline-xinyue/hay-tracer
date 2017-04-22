@@ -16,8 +16,17 @@ calcDiffuse kd (Ray _ dir) (Light source light_col (Vec3 a1 a2 a3)) point diffus
         dist_to_light = vlength light_dir
         att = a1 + a2 * dist_to_light + a3 * (dist_to_light ** 2)
         attenuation = if att == 0 then 0.0001 else att in
-        if diffuseIntensity <= 0 then Vec3 0 0 0 else
-          multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
+        if diffuseIntensity <= 0 then Vec3 0 0 0
+          else multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
+
+calcSpecular :: Double -> Double -> Ray -> Light -> Point-> Vec3 -> Vec3 -> Vec3
+calcSpecular ks alpha (Ray _ dir) (Light source _ _) point normal specular
+  | ks <= 0 = Vec3 0 0 0
+  | otherwise =
+  let light_dir = minus source point
+      specularIntensity = (dot normal (normalize (minus light_dir dir))) ** alpha in
+      if specularIntensity <= 0 then Vec3 0 0 0
+        else multScaler specular (specularIntensity * ks)
 
 getSurfaceParam :: [Surface] -> Int -> Maybe PhongCoef
 getSurfaceParam [] _                = Nothing
