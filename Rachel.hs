@@ -14,6 +14,18 @@ import qualified Data.ByteString.Char8 as DBC8
 -- import qualified Data.Double.Conversion.ByteString as DD
 
 -- ========================================================================
+-- get color from pigment
+getColor :: Pigment -> Point -> Color
+getColor (Solid color) _ = color
+getColor (CheckerBoard c1 c2 sideLen) (Vec3 x y z)
+  | (pxs + pys + pzs) `mod` 2 == 0 = c1
+  | otherwise = c2
+  where
+    pxs = floor (x / sideLen) :: Int
+    pys = floor (y / sideLen) :: Int
+    pzs = floor (z / sideLen) :: Int
+
+-- ========================================================================
 -- Read input file into various GADTs
 
 readObjects :: [String] -> [Object]
