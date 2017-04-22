@@ -66,12 +66,19 @@ lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfa
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
-phong ray _ _ _ [] _ _
+phong _ _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
-phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
+phong _ intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
+  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+    in multScaler col (0.1 * ka)
+phong ray@(Ray origin direction) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
     in multScaler col (0.1 * ka)
 phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
+  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+        finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
+    in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
+phong ray@(Ray origin direction) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
         finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
     in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
