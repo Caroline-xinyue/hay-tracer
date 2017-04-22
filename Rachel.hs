@@ -120,7 +120,6 @@ getIntersect (Ray origin dir) (Sphere center radius _ _)
       y = 2 * (dot center_origin dir)
       z = (dot center_origin center_origin) - radius ** 2
       delta = y ** 2 - 4 * x * z
-
 getIntersect (Ray origin dir) (Plane (Vec4 a b c d) _ _)
   | dot normal dir /= 0 = -(d + (dot origin normal) / (dot dir normal))
   | otherwise = -1

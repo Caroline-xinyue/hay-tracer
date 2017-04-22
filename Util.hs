@@ -7,6 +7,9 @@ minus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
 plus :: Vec3 -> Vec3 -> Vec3
 plus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
 
+vlength :: Vec3 -> Double
+vlength vec = sqrt (dot vec vec)
+
 multScaler :: Vec3 -> Double -> Vec3
 multScaler (Vec3 x y z) k = Vec3 (k * x) (k * y) (k * z)
 
@@ -43,3 +46,6 @@ clamp :: Vec3 -> Vec3
 clamp (Vec3 r g b) = Vec3 (clampdouble r) (clampdouble g) (clampdouble b)
                 where clampdouble f = (max 0.0 (min 1.0 f))
 -}
+
+vdistance :: Vec3 -> Vec3 -> Double
+vdistance v1 v2 = let d = minus v2 v1 in vlength d
