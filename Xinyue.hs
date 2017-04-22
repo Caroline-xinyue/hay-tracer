@@ -6,27 +6,27 @@ import Rachel
 import qualified Data.Vector as V
 import qualified Data.Matrix as M
 
-calcDiffuse :: Double -> Ray -> Light -> Point -> Vec3 -> Vec3 -> Color
-calcDiffuse kd (Ray _ dir) (Light source light_col (Vec3 a1 a2 a3)) point diffuse normal
+calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
+calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
   | kd <= 0 = Vec3 0 0 0
   | otherwise =
-    let light_dir = minus source point
-        new_normal = if (dot normal dir) > 0 then (multScaler normal (-1)) else normal
-        diffuseIntensity = dot light_dir new_normal
+    let new_normal = if (dot normal dir) > 0 then (multScaler normal (-1)) else normal
         dist_to_light = vlength light_dir
+        n_dir = normalize light_dir
+        diffuseIntensity = dot n_dir new_normal
         att = a1 + a2 * dist_to_light + a3 * (dist_to_light ** 2)
-        attenuation = if att == 0 then 0.0001 else att in
-        if diffuseIntensity <= 0 then Vec3 0 0 0
-          else multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
+        attenuation = if att == 0 then 0.0001 else att
+    in if diffuseIntensity <= 0 then Vec3 0 0 0
+       else multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
 
-calcSpecular :: Double -> Double -> Ray -> Light -> Point-> Vec3 -> Vec3 -> Vec3
-calcSpecular ks alpha (Ray _ dir) (Light source _ _) point normal specular
+calcSpecular :: Double -> Double -> Ray -> Vec3 -> Vec3 -> Color
+calcSpecular ks alpha (Ray _ dir) light_dir normal
   | ks <= 0 = Vec3 0 0 0
   | otherwise =
-  let light_dir = minus source point
-      specularIntensity = (dot normal (normalize (minus light_dir dir))) ** alpha in
-      if specularIntensity <= 0 then Vec3 0 0 0
-        else multScaler specular (specularIntensity * ks)
+  let n_dir = normalize light_dir
+      specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
+  in if specularIntensity <= 0 then Vec3 0 0 0
+     else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
 
 getSurfaceParam :: [Surface] -> Int -> PhongCoef
 getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
@@ -38,23 +38,27 @@ checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
     in if point < 0 || point > vdistance intersectPt light_pos then checkVisible shadow_ray intersectPt light objs
        else False
 
-sendShadowRay :: [Light] -> [Surface] -> Object -> Vec3
-sendShadowRay [] _ _ = Vec3 127.5 127.5 127.5
-sendShadowRay [Light _ color _] surfaces (Sphere _ _ _ surfaceIdx) =
-  let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-  in multScaler color (0.1 * ka)
-sendShadowRay [Light _ color _] surfaces (Plane _ _ surfaceIdx) =
-  let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-  in multScaler color (0.1 * ka)
-sendShadowRay [Light _ color _] surfaces intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) =
-  let (PhongCoef ka kd ks alpha) = getSurfaceParam surfaces surfaceIdx
-  in multScaler color (0.1 * ka)
-
+lit :: Ray -> Light -> Point -> Object -> [Surface] -> [Pigment] -> Color
+lit ray light@(Light pos _ _) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) surfaces pigments
+  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
+        normal  = getNormal intersectObj intersectPt
+        diffuse = getColor (pigments !! pigmentIdx) intersectPt
+        light_dir = minus pos intersectPt
+        diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
+        specularCol = calcSpecular ks alpha ray light_dir normal
+    in plus diffuseCol specularCol
+lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) surfaces pigments
+  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
+        normal  = getNormal intersectObj intersectPt
+        diffuse = getColor (pigments !! pigmentIdx) intersectPt
+        light_dir = minus pos intersectPt
+        diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
+        specularCol = calcSpecular ks alpha ray light_dir normal
+    in plus diffuseCol specularCol
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 {-
---      light_dir = minus light_pos intersectPt
 phong ray@(Ray origin direction) intersectPt intersectObj objs [] _ _
   = Vec3 127.5 127.5 127.5
 phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (Light _ color _ : lights) surfaces pigments
