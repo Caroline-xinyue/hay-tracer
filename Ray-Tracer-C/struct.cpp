@@ -100,7 +100,7 @@ void CheckerBoard::debug_info() {
 }
 
 glm::vec3 CheckerBoard::getColor(const glm::vec3 pos) {
-	if(int(floor(pos.x/sideLen) + floor(pos.y/sideLen) +  + floor(pos.z/sideLen)) % 2 == 0) {
+	if(int(floor(pos.x/sideLen) + floor(pos.y/sideLen)  + floor(pos.z/sideLen)) % 2 == 0) {
 		return color0;
 	} else {
 		return color1;
