@@ -33,7 +33,9 @@ main = do
       pigments = readPigments pigInputs
       surfaces = readSurfaces sfInputs
       objects  = readObjects objInputs
-      size     = 100
-      mat      = M.fromList size size (replicate (size * size) (Vec3 255 0 0)) in
-    write_ppm3 "hahaha.ppm" (Image size size) mat
-  -- write_ppm3 fileName image (sendRay image camera surfaces objects lights pigments)
+      img_data = sendRay image camera surfaces objects lights pigments
+  write_ppm3 fileName image img_data
+
+  -- size     = 100
+  -- mat      = M.fromList size size (replicate (size * size) (Vec3 255 0 0)) in
+  -- write_ppm3 "hahaha.ppm" (Image size size) mat

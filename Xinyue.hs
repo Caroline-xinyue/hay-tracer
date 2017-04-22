@@ -136,16 +136,16 @@ sendRay image@(Image img_width img_height) camera surfaces objects lights pigmen
   sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights pigments
     = let ray   = constructRay image pixel camera surfaces objects lights
           color = trace ray surfaces objects lights pigments 0
-      in writePixel mat 0 0 color
+      in writePixel mat 1 1 color
   sendRayPixel mat image@(Image img_width _) pixel@(r, 0) camera surfaces objects lights pigments
     = let ray         = constructRay image pixel camera surfaces objects lights
           color       = trace ray surfaces objects lights pigments 0
-          mat_written = writePixel mat r 0 color
+          mat_written = writePixel mat (r + 1) 1 color
       in sendRayPixel mat_written image (r - 1, img_width - 1) camera surfaces objects lights pigments
   sendRayPixel mat image pixel@(r, c) camera surfaces objects lights pigments
     = let ray         = constructRay image pixel camera surfaces objects lights
           color       = trace ray surfaces objects lights pigments 0
-          mat_written = writePixel mat r c color
+          mat_written = writePixel mat (r + 1) (c + 1) color
       in sendRayPixel mat_written image (r, c - 1) camera surfaces objects lights pigments
 
-image_data = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
+image_data = M.fromList size size (replicate (size * size) (Vec3 0 0 0))
