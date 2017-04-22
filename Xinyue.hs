@@ -28,9 +28,8 @@ calcSpecular ks alpha (Ray _ dir) (Light source _ _) point normal specular
       if specularIntensity <= 0 then Vec3 0 0 0
         else multScaler specular (specularIntensity * ks)
 
-getSurfaceParam :: [Surface] -> Int -> Maybe PhongCoef
-getSurfaceParam [] _                = Nothing
-getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> Just phongCoef
+getSurfaceParam :: [Surface] -> Int -> PhongCoef
+getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
 
 checkVisible :: Ray -> Point -> Light -> [Object] -> Bool
 checkVisible _ _ _ [] = True
@@ -39,17 +38,31 @@ checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
     in if point < 0 || point > vdistance intersectPt light_pos then checkVisible shadow_ray intersectPt light objs
        else False
 
+sendShadowRay :: [Light] -> [Surface] -> Object -> Vec3
+sendShadowRay [] _ _ = Vec3 127.5 127.5 127.5
+sendShadowRay [Light _ color _] surfaces (Sphere _ _ _ surfaceIdx) =
+  let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+  in multScaler color (0.1 * ka)
+sendShadowRay [Light _ color _] surfaces (Plane _ _ surfaceIdx) =
+  let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+  in multScaler color (0.1 * ka)
+sendShadowRay [Light _ color _] surfaces intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) =
+  let (PhongCoef ka kd ks alpha) = getSurfaceParam surfaces surfaceIdx
+  in multScaler color (0.1 * ka)
+
+
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 {-
 --      light_dir = minus light_pos intersectPt
-phong ray@(Ray origin direction) intersectPt intersectObj objs []
+phong ray@(Ray origin direction) intersectPt intersectObj objs [] _ _
   = Vec3 127.5 127.5 127.5
-phong ray@(Ray origin direction) intersectPt intersectObj@(Solid _ _ pigmentIdx surfaceIdx) objs (Light _ color _ : lights)
+phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (Light _ color _ : lights) surfaces pigments
   = let (PhongCoef ka kd ks alpha) = getSurfaceParam surfaces surfaceIdx
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! pigmentIdx) intersectPt
         finalColor = 0.1 * color * ka
+    in
 -}
 phong = error "Not Implemented"
 
