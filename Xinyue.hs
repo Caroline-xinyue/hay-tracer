@@ -68,19 +68,14 @@ lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfa
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 phong _ _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
-phong _ intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
+phong _ _ (Sphere _ _ _ surfaceIdx) _ [Light _ col _] surfaces _
   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
     in multScaler col (0.1 * ka)
-phong ray@(Ray origin direction) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs [Light _ col _] surfaces pigments
+phong _ _ (Plane _ _ surfaceIdx) _ [Light _ col _] surfaces _
   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
     in multScaler col (0.1 * ka)
-phong ray@(Ray origin direction) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
-  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-        finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
-    in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
-phong ray@(Ray origin direction) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs (_ : light@(Light _ col _) : lights) surfaces pigments
-  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-        finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
+phong ray intersectPt intersectObj objs (_ : light : lights) surfaces pigments
+  = let finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
     in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
 
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
