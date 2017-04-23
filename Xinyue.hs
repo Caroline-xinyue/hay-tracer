@@ -72,11 +72,9 @@ phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment]
 phong _ _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
 phong ray intersectPt intersectObj objs lights surfaces pigments
-  = let (_, surfaceIdx)      = getIndices intersectObj
-        (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-    in case head lights of (Light _ col _) -> foldl plus (multScaler col (0.1 * ka)) (map (lit ray intersectPt intersectObj objs surfaces pigments) (tail lights)) where
-        --  initColor  = case head lights of (Light _ col _) -> multScaler (col (head lights)) (0.1 * ka (phongCoef (surfaces !! (surfaceIdx intersectObj))))
-        --  litColor = lit ray intersectPt intersectObj objs surfaces pigments
+  = foldl plus initColor (map litColor (tail lights)) where
+      initColor  = multScaler (getCol (head lights)) (0.1 * getKa (getPhongCoef (surfaces !! (getNf intersectObj))))
+      litColor = lit ray intersectPt intersectObj objs surfaces pigments
 
 -- phong _ _ (Sphere _ _ _ surfaceIdx) _ [Light _ col _] surfaces _
 --   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx

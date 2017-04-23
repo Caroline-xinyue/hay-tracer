@@ -25,7 +25,7 @@ data Camera = Camera Point Point Vec3 Double
 data Image = Image Int Int
   deriving Show
 -- Light Point (source) Color (intensity) Vec3c (attenuation)
-data Light = Light Point Color Vec3
+data Light = Light { getPt :: Point, getCol :: Color, getAtt :: Vec3 }
   deriving Show
 -- Ray Point (origin) Vec3 (direction)
 data Ray = Ray Point Vec3
