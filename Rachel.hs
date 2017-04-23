@@ -44,9 +44,9 @@ readPigments :: [String] -> [Pigment]
 readPigments [] = []
 readPigments (x : xs) = pig : readPigments xs where
   pig = case ((words x) !! 0) of
-    "solid" -> Solid ((strToVec3s (drop 6 x)) !! 0)
+    "solid"   -> Solid ((strToVec3s (drop 6 x)) !! 0)
     "checker" -> CheckerBoard ((strToVec3s (drop 8 x)) !! 0) ((strToVec3s (drop 8 x)) !! 1) ((strToDoubles (drop 8 x)) !! 6)
-    _ -> error "pigment data corrupted"
+    _         -> error "pigment data corrupted"
 
 readSurfaces :: [String] -> [Surface]
 readSurfaces [] = []
@@ -54,7 +54,7 @@ readSurfaces (x : xs) = surface : readSurfaces xs where
   doubles = strToDoubles x
   surface = case doubles of
     (a:b:c:d:e:f:g:_) -> Surface (PhongCoef a b c d) e f g
-    _ -> error "surface data corrupted"
+    _                 -> error "surface data corrupted"
 
 readLights :: [String] -> [Light]
 readLights [] = []
@@ -87,23 +87,23 @@ strToDoubles str = map read (words str) :: [Double]
 groupDoubles :: [Double] -> [Vec3]
 groupDoubles ds
   | length ds >= 3 = doublesToVec3 (take 3 ds) : (groupDoubles (drop 3 ds))
-  | otherwise = []
+  | otherwise      = []
 
 -- [1.1, 2.2, 3.3] -> Vec3 1.1 2.2 3.3
 doublesToVec3 :: [Double] -> Vec3
 doublesToVec3 ds
   | length ds == 3 = Vec3 (ds !! 0) (ds !! 1) (ds !! 2)
-  | otherwise = error "list length is not 3"
+  | otherwise      = error "list length is not 3"
 
 -- =======================================================================
 
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
 getIntersect :: Ray -> Object -> Double
 getIntersect (Ray origin dir) (Sphere center radius _ _)
-  | delta < 0 = -1
+  | delta < 0  = -1
   | delta == 0 = let t = -y / (2 * x) in
     if t < 0 then -1 else t
-  | otherwise =
+  | otherwise  =
     let t1 = (-y + sqrt(delta)) / (2 * x)
         t2 = (-y - sqrt(delta)) / (2 * x) in
         if t1 < 0 && t2 < 0
@@ -121,14 +121,14 @@ getIntersect (Ray origin dir) (Sphere center radius _ _)
       delta = y ** 2 - 4 * x * z
 getIntersect (Ray origin dir) (Plane (Vec4 a b c d) _ _)
   | dot normal dir /= 0 = -((d + (dot origin normal)) / (dot dir normal))
-  | otherwise = -1
+  | otherwise           = -1
   where
     normal = normalize $ Vec3 a b c
 
 
 -- Given a specific object and the point on object, compute the normal vector
 getNormal :: Object -> Point -> Vec3
-getNormal (Sphere center _ _ _) point = normalize $ minus point center
+getNormal (Sphere center _ _ _) point  = normalize $ minus point center
 getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 
 -- ========================================================================
@@ -159,7 +159,7 @@ matrixToList :: M.Matrix Color -> [(Double, Double, Double)]
 matrixToList m = concatMap vec3ListToTuple (M.toLists m)
 
 vec3ListToTuple :: [Vec3] -> [(Double, Double, Double)]
-vec3ListToTuple [] = []
+vec3ListToTuple []       = []
 vec3ListToTuple (x : xs) = vec3ToTuple x : vec3ListToTuple xs
 
 vec3ToTuple :: Vec3 -> (Double, Double, Double)
