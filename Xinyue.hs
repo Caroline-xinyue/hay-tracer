@@ -39,10 +39,10 @@ checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
        else False
 
 lit :: Ray -> Point -> Object -> [Object] -> [Surface] -> [Pigment] -> Light -> Color
-lit ray intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs surfaces pigments light@(Light pos _ _)
-  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
+lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
+  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces (getNf intersectObj)
         normal  = getNormal intersectObj intersectPt
-        diffuse = getColor (pigments !! pigmentIdx) intersectPt
+        diffuse = getColor (pigments !! (getNp intersectObj)) intersectPt
         light_dir = minus pos intersectPt
         diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
         specularCol = calcSpecular ks alpha ray light_dir normal
@@ -51,28 +51,13 @@ lit ray intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs surface
         visible = checkVisible shadow_ray intersectPt light objs
     in if visible then plus diffuseCol specularCol
        else Vec3 0 0 0
-lit ray intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs surfaces pigments light@(Light pos _ _)
-  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
-        normal  = getNormal intersectObj intersectPt
-        diffuse = getColor (pigments !! pigmentIdx) intersectPt
-        light_dir = minus pos intersectPt
-        diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
-        specularCol = calcSpecular ks alpha ray light_dir normal
-        n_dir = normalize light_dir
-        shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
-        visible = checkVisible shadow_ray intersectPt light objs
-    in if visible then plus diffuseCol specularCol
-       else Vec3 0 0 0
-
--- getSurfaceParam :: [Surface] -> Int -> PhongCoef
--- getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 phong _ _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
 phong ray intersectPt intersectObj objs lights surfaces pigments
-  = foldl plus initColor (map litColor (tail lights)) where
+  = foldr plus initColor (map litColor (tail lights)) where
       initColor  = multScaler (getCol (head lights)) (0.1 * getKa (getPhongCoef (surfaces !! (getNf intersectObj))))
       litColor = lit ray intersectPt intersectObj objs surfaces pigments
 

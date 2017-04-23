@@ -17,7 +17,8 @@ data Vector3 a = Vector3 a a a
 
 -- Sphere Vec3 (center) Double (radius) Int (np) Int (nf) | Plane Vec4 (coefficients)
 data Object = Sphere { getCenter :: Vec3, getRadius :: Double, getNp :: Int, getNf :: Int }
-            | Plane { getCoef :: Vec4, getNp :: Int, getNf :: Int} deriving Show
+            | Plane { getCoef :: Vec4, getNp :: Int, getNf :: Int }
+  deriving Show
 -- Camera Point (camera pos) Point (at point) Vec3 (up Vec3tor) Double (fovy)
 data Camera = Camera Point Point Vec3 Double
   deriving Show
@@ -38,10 +39,12 @@ data PhongCoef = PhongCoef { getKa :: Double
                            , getKd :: Double
                            , getKs :: Double
                            , getAlpha :: Double
-                         } deriving Show
+                           }
+  deriving Show
 -- Surface PhongCoef Double (reflectivity coef) Double (transmission coef) Double (index of refraction)
 data Surface = Surface { getPhongCoef :: PhongCoef
                        , getKr :: Double
                        , getKt :: Double
                        , getKi :: Double
-                     } deriving Show
+                       }
+  deriving Show
