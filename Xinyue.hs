@@ -5,6 +5,10 @@ import Util
 import Rachel
 import qualified Data.Matrix as M
 
+getIndices :: Object -> (Int, Int)
+getIndices (Sphere _ _ np nf) = (np, nf)
+getIndices (Plane _ np nf)    = (np, nf)
+
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
   | kd <= 0 = Vec3 0 0 0
