@@ -17,9 +17,10 @@ multScaler :: Vec3 -> Double -> Vec3
 multScaler (Vec3 x y z) k = Vec3 (k * x) (k * y) (k * z)
 
 normalize :: Vec3 -> Vec3
-normalize (Vec3 x1 y1 z1) =
-  let invlen = 1.0 / (sqrt ((x1 * x1) + (y1 * y1) + (z1 * z1))) in
-    Vec3 (x1 * invlen) (y1 * invlen) (z1 * invlen)
+normalize vec =
+  let mag = vlength vec
+  in if mag /= 0 then multScaler vec (1.0 / mag)
+     else Vec3 0 0 0
 
 radians :: Double -> Double
 radians x = (x * 3.1415926535897) / 180

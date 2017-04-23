@@ -3,6 +3,7 @@ module Xinyue where
 import DataTypes
 import Util
 import Rachel
+import Data.List
 import qualified Data.Matrix as M
 
 getIndices :: Object -> (Int, Int)
@@ -41,8 +42,8 @@ checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
     in if point < 0 || point > vdistance intersectPt light_pos then checkVisible shadow_ray intersectPt light objs
        else False
 
-lit :: Ray -> Light -> Point -> Object -> [Object] -> [Surface] -> [Pigment] -> Color
-lit ray light@(Light pos _ _) intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs surfaces pigments
+lit :: Ray -> Point -> Object -> [Object] -> [Surface] -> [Pigment] -> Light -> Color
+lit ray intersectPt intersectObj@(Sphere _ _ pigmentIdx surfaceIdx) objs surfaces pigments light@(Light pos _ _)
   = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! pigmentIdx) intersectPt
@@ -54,7 +55,7 @@ lit ray light@(Light pos _ _) intersectPt intersectObj@(Sphere _ _ pigmentIdx su
         visible = checkVisible shadow_ray intersectPt light objs
     in if visible then plus diffuseCol specularCol
        else Vec3 0 0 0
-lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs surfaces pigments
+lit ray intersectPt intersectObj@(Plane _ pigmentIdx surfaceIdx) objs surfaces pigments light@(Light pos _ _)
   = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces surfaceIdx
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! pigmentIdx) intersectPt
@@ -67,19 +68,29 @@ lit ray light@(Light pos _ _) intersectPt intersectObj@(Plane _ pigmentIdx surfa
     in if visible then plus diffuseCol specularCol
        else Vec3 0 0 0
 
+-- getSurfaceParam :: [Surface] -> Int -> PhongCoef
+-- getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
+
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 phong _ _ _ _ [] _ _
   = Vec3 127.5 127.5 127.5
-phong _ _ (Sphere _ _ _ surfaceIdx) _ [Light _ col _] surfaces _
-  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-    in multScaler col (0.1 * ka)
-phong _ _ (Plane _ _ surfaceIdx) _ [Light _ col _] surfaces _
-  = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
-    in multScaler col (0.1 * ka)
-phong ray intersectPt intersectObj objs (_ : light : lights) surfaces pigments
-  = let finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
-    in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
+phong ray intersectPt intersectObj objs lights surfaces pigments
+  = let (_, surfaceIdx)      = getIndices intersectObj
+        (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+    in case head lights of (Light _ col _) -> foldl plus (multScaler col (0.1 * ka)) (map (lit ray intersectPt intersectObj objs surfaces pigments) (tail lights)) where
+        --  initColor  = case head lights of (Light _ col _) -> multScaler (col (head lights)) (0.1 * ka (phongCoef (surfaces !! (surfaceIdx intersectObj))))
+        --  litColor = lit ray intersectPt intersectObj objs surfaces pigments
+
+-- phong _ _ (Sphere _ _ _ surfaceIdx) _ [Light _ col _] surfaces _
+--   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+--     in multScaler col (0.1 * ka)
+-- phong _ _ (Plane _ _ surfaceIdx) _ [Light _ col _] surfaces _
+--   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
+--     in multScaler col (0.1 * ka)
+-- phong ray intersectPt intersectObj objs (_ : light : lights) surfaces pigments
+--   = let finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
+--     in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
 
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
