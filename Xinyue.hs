@@ -5,6 +5,7 @@ import Util
 import Rachel
 import Data.List
 import Data.Array
+import qualified Debug.Trace as TR
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
@@ -23,10 +24,10 @@ calcSpecular :: Double -> Double -> Ray -> Vec3 -> Vec3 -> Color
 calcSpecular ks alpha (Ray _ dir) light_dir normal
   | ks <= 0 = Vec3 0 0 0
   | otherwise =
-  let n_dir = normalize light_dir
-      specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
+  let n_dir = TR.trace ("l_dir: " ++ show light_dir) (normalize light_dir)
+      specularIntensity = TR.trace ("dir: " ++ show dir ++ "normal: " ++ show normal) ((dot normal (normalize (minus n_dir dir))) ** alpha)
   in if specularIntensity <= 0 then Vec3 0 0 0
-     else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
+     else multScaler (Vec3 1.0 1.0 1.0) ((TR.trace ("specularIntensity: " ++ show specularIntensity) specularIntensity) * ks)
 
 getSurfaceParam :: [Surface] -> Int -> PhongCoef
 getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
@@ -49,32 +50,22 @@ lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
         n_dir = normalize light_dir
         shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
         visible = checkVisible shadow_ray intersectPt light objs
-    in if visible then plus diffuseCol specularCol
+    in if visible then TR.trace ("diffuse: " ++ show diffuseCol ++ "specular: " ++ show specularCol) (plus diffuseCol specularCol)
        else Vec3 0 0 0
 
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 phong _ _ _ _ [] _ _
-  = Vec3 127.5 127.5 127.5
+  = Vec3 0.5 0.5 0.5
 phong ray intersectPt intersectObj objs lights surfaces pigments
   = foldr plus initColor (map litColor (tail lights)) where
       initColor  = multScaler (getCol (head lights)) (0.1 * getKa (getPhongCoef (surfaces !! (getNf intersectObj))))
       litColor = lit ray intersectPt intersectObj objs surfaces pigments
 
--- phong _ _ (Sphere _ _ _ surfaceIdx) _ [Light _ col _] surfaces _
---   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
---     in multScaler col (0.1 * ka)
--- phong _ _ (Plane _ _ surfaceIdx) _ [Light _ col _] surfaces _
---   = let (PhongCoef ka _ _ _) = getSurfaceParam surfaces surfaceIdx
---     in multScaler col (0.1 * ka)
--- phong ray intersectPt intersectObj objs (_ : light : lights) surfaces pigments
---   = let finalColor = lit ray light intersectPt intersectObj objs surfaces pigments
---     in plus finalColor (phong ray intersectPt intersectObj objs (light : lights) surfaces pigments)
-
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
 checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
-  case checkIntersect ray objs of
+  case TR.trace (show t) (checkIntersect ray objs) of
     Nothing                         -> if t < 0 then Nothing
                                        else Just (obj, t)
     Just min_intersect@(_, min_pos) -> if t < 0 then Just min_intersect
@@ -82,9 +73,9 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
                                              else Just min_intersect
 
 shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
-shader _ [] _ _ _                                               = Vec3 127.5 127.5 127.5
+shader _ [] _ _ _                                               = Vec3 0.5 0.5 0.5
 shader ray@(Ray origin direction) objs lights surfaces pigments = case checkIntersect ray objs of
-     Nothing                 -> Vec3 127.5 127.5 127.5
+     Nothing                 -> Vec3 0.5 0.5 0.5
      Just (min_obj, min_pos) -> phong ray point min_obj objs lights surfaces pigments where
        point = plus origin (multScaler direction min_pos)
 
@@ -98,12 +89,13 @@ refraction = error "Not Implemented"
 trace :: Ray -> [Surface] -> [Object] -> [Light] -> [Pigment] -> Int -> Color
 trace ray@(Ray _ _) surfaces objs lights pigments depth =
   if depth > 20 then Vec3 127.5 127.5 127.5
+  -- else clampVec (multScaler (shader ray objs lights surfaces pigments) 255) (Vec3 0 0 0) (Vec3 255 255 255)
   else clampVec (multScaler (shader ray objs lights surfaces pigments) 255) (Vec3 0 0 0) (Vec3 255 255 255)
 
 -- Perform view transformation similar to glm::lookAt
 viewTransform :: Camera -> Vector3 Vec3
 viewTransform (Camera pos at up _) = Vector3 cx cy cz where
-  cz = normalize (minus at pos)
+  cz = multScaler (normalize (minus at pos)) (-1)
   cx = normalize (cross up cz)
   cy = cross cz cx
 
@@ -115,7 +107,7 @@ getViewDimension (Image img_width img_height) (Camera _ _ _ fovy) = Vector2 widt
 
 constructRay :: Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> Ray
 constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _) _ _ _
-  = let (Vector3 cx cy cz)     = viewTransform camera
+  = let trans@(Vector3 cx cy cz)     = viewTransform camera
         (Vector2 width height) = getViewDimension image camera
         pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
         pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
@@ -130,21 +122,3 @@ sendRay image@(Image img_width img_height) camera surfaces objects lights pigmen
                                                      , y <- [0..img_width - 1]
                                                      , let ray = constructRay image (x, y) camera surfaces objects lights
                                                      , let c = trace ray surfaces objects lights pigments 0]
--- sendRay image@(Image img_width img_height) camera surfaces objects lights pigments
---   = sendRayPixel image_data image (img_height - 1, img_width - 1) camera surfaces objects lights pigments where
---   sendRayPixel :: M.Matrix Color -> Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> M.Matrix Color
---   sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights pigments
---     = let ray   = constructRay image pixel camera surfaces objects lights
---           color = trace ray surfaces objects lights pigments 0
---       in writePixel mat 1 1 color
---   sendRayPixel mat image@(Image img_width _) pixel@(r, 0) camera surfaces objects lights pigments
---     = let ray         = constructRay image pixel camera surfaces objects lights
---           color       = trace ray surfaces objects lights pigments 0
---           mat_written = writePixel mat (r + 1) 1 color
---       in sendRayPixel mat_written image (r - 1, img_width - 1) camera surfaces objects lights pigments
---   sendRayPixel mat image pixel@(r, c) camera surfaces objects lights pigments
---     = let ray         = constructRay image pixel camera surfaces objects lights
---           color       = trace ray surfaces objects lights pigments 0
---           mat_written = writePixel mat (r + 1) (c + 1) color
---       in sendRayPixel mat_written image (r, c - 1) camera surfaces objects lights pigments
--- image_data = M.fromList size size (replicate (size * size) (Vec3 0 0 0))

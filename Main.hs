@@ -6,7 +6,7 @@ import Prelude
 import DataTypes
 import System.IO
 import Control.Monad
-import qualified Data.Matrix as M
+-- import qualified Data.Matrix as M
 
 main = do
   fileName <- getLine

@@ -36,11 +36,11 @@ cross (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) =
   ((x1 * y2) - (y1 * x2))
 
 clampVec :: Vec3 -> Vec3 -> Vec3 -> Vec3
-clampVec (Vec3 minx miny minz) (Vec3 x y z) (Vec3 maxx maxy maxz)
-  = Vec3 (clamp minx x maxx) (clamp miny y maxy) (clamp minz z maxz)
+clampVec (Vec3 x y z) (Vec3 minx miny minz) (Vec3 maxx maxy maxz)
+  = Vec3 (clamp x minx maxx) (clamp y miny maxy) (clamp z minz maxz)
 
 clamp :: Double -> Double -> Double -> Double
-clamp min x max
+clamp x min max
  | x < min = min
  | x > max = max
  | otherwise = x

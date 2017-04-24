@@ -5,9 +5,11 @@ import Prelude
 import DataTypes
 import Data.Word
 import System.IO
+import Data.Array
 import qualified Data.List as L
 import qualified Data.Vector as V
 import qualified Data.Matrix as M
+import qualified Debug.Trace as TR
 import qualified Data.ByteString.Lazy as BIN
 import qualified Data.ByteString.Char8 as DBC8
 import qualified Data.Serialize as DS
@@ -101,7 +103,7 @@ doublesToVec3 ds
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
 getIntersect :: Ray -> Object -> Double
 getIntersect (Ray origin dir) (Sphere center radius _ _)
-  | delta < 0  = -1
+  | delta < 0  = TR.trace ("delta: " ++ show delta ++ " x: " ++ show x ++ " y: " ++ show y ++ " z: " ++ show z ) (-1)
   | delta == 0 = let t = -y / (2 * x) in
     if t < 0 then -1 else t
   | otherwise  =
@@ -118,7 +120,7 @@ getIntersect (Ray origin dir) (Sphere center radius _ _)
       center_origin = minus origin center
       x = dot dir dir
       y = 2 * (dot center_origin dir)
-      z = (dot center_origin center_origin) - radius ** 2
+      z = (dot center_origin center_origin) - (radius ** 2)
       delta = y ** 2 - 4 * x * z
 getIntersect (Ray origin dir) (Plane (Vec4 a b c d) _ _)
   | dot normal dir /= 0 = -((d + (dot origin normal)) / (dot dir normal))
@@ -135,7 +137,7 @@ getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 -- ========================================================================
 -- TODO: Change function names to match the actual arguments
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
-write_ppm6 :: String -> Image -> M.Matrix Color -> IO()
+write_ppm6 :: String -> Image -> Array (Int, Int) Color -> IO()
 write_ppm6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
 
 stringPPM :: Image -> [(Word8,Word8,Word8)] -> BIN.ByteString
@@ -146,17 +148,14 @@ stringPPM image ps =
 writePPM :: String -> Image -> [(Word8,Word8,Word8)] -> IO ()
 writePPM f sz ps = BIN.writeFile f (stringPPM sz ps)
 
-writePixel :: M.Matrix Color -> Int -> Int -> Color -> M.Matrix Color
-writePixel mat x y c = M.setElem c (x, y) mat
-
 getWidth :: Image -> Int
 getWidth (Image x _) = x
 
 getHeight :: Image -> Int
 getHeight (Image _ y) = y
 
-matrixToList :: M.Matrix Color -> [(Double, Double, Double)]
-matrixToList m = concatMap vec3ListToTuple (M.toLists m)
+matrixToList :: Array (Int, Int) Color -> [(Double, Double, Double)]
+matrixToList m = vec3ListToTuple (elems m)
 
 vec3ListToTuple :: [Vec3] -> [(Double, Double, Double)]
 vec3ListToTuple []       = []
@@ -181,5 +180,9 @@ dToW d = fromIntegral (round d)
 fileName = "haha.ppm"
 size = 1000
 image = Image size size
-mat = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
-mat2 = writePixel mat 1 1 (Vec3 0 255 0)
+matrix = array ((0, 0), (size - 1, size - 1)) [((x, y), c) |
+                                       x <- [0..size - 1],
+                                       y <- [0..size - 1],
+                                       let c = Vec3 255 0 0]
+-- mat = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
+-- mat2 = writePixel mat 1 1 (Vec3 0 255 0)
