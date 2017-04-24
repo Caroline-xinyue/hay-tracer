@@ -34,7 +34,7 @@ main = do
       surfaces = readSurfaces sfInputs
       objects  = readObjects objInputs
       img_data = sendRay image camera surfaces objects lights pigments
-  write_ppm3 fileName image img_data
+  write_ppm6 fileName image img_data
 
   -- size     = 100
   -- mat      = M.fromList size size (replicate (size * size) (Vec3 255 0 0)) in

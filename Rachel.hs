@@ -10,6 +10,7 @@ import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Data.ByteString.Lazy as BIN
 import qualified Data.ByteString.Char8 as DBC8
+import qualified Data.Serialize as DS
 -- import qualified Data.ByteString.Conversion as DBC
 -- import qualified Data.Double.Conversion.ByteString as DD
 
@@ -134,16 +135,15 @@ getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 -- ========================================================================
 -- TODO: Change function names to match the actual arguments
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
-write_ppm3 :: String -> Image -> M.Matrix Color -> IO()
-write_ppm3 str img mat = writePPM str img (doublesToBStrings (matrixToList mat))
+write_ppm6 :: String -> Image -> M.Matrix Color -> IO()
+write_ppm6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
 
-stringPPM :: Image -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)] -> BIN.ByteString
+stringPPM :: Image -> [(Word8,Word8,Word8)] -> BIN.ByteString
 stringPPM image ps =
-  BIN.pack (map (fromIntegral . fromEnum) $ "P3\n" ++ show (getWidth image) ++ " " ++ show (getHeight image) ++ "\n255\n") `BIN.append`
-  BIN.concat (map (\(r,g,b) -> BIN.concat [r, space, g, space, b, space]) ps) where
-    space = BIN.pack [0x20]
+  BIN.pack (map (fromIntegral . fromEnum) $ "P6\n" ++ show (getWidth image) ++ " " ++ show (getHeight image) ++ "\n255\n") `BIN.append`
+  BIN.concat (map (\(r,g,b) -> BIN.pack [r, g, b]) ps)
 
-writePPM :: String -> Image -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)] -> IO ()
+writePPM :: String -> Image -> [(Word8,Word8,Word8)] -> IO ()
 writePPM f sz ps = BIN.writeFile f (stringPPM sz ps)
 
 writePixel :: M.Matrix Color -> Int -> Int -> Color -> M.Matrix Color
@@ -165,11 +165,18 @@ vec3ListToTuple (x : xs) = vec3ToTuple x : vec3ListToTuple xs
 vec3ToTuple :: Vec3 -> (Double, Double, Double)
 vec3ToTuple (Vec3 x y z) = (x, y, z)
 
-doublesToBStrings :: [(Double, Double, Double)] -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)]
-doublesToBStrings ds = map (\(d1, d2, d3) -> (dToB d1, dToB d2, dToB d3)) ds
+-- doublesToBStrings :: [(Double, Double, Double)] -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)]
+-- doublesToBStrings ds = map (\(d1, d2, d3) -> (dToB d1, dToB d2, dToB d3)) ds
 
-dToB :: Double -> BIN.ByteString
-dToB d = BIN.fromChunks [DBC8.pack (show d)]
+-- dToB :: Double -> BIN.ByteString
+-- dToB d = DS.encodeLazy d
+-- dToB d = BIN.fromChunks [DBC8.pack (show d)]
+
+doublesToWords :: [(Double, Double, Double)] -> [(Word8,Word8,Word8)]
+doublesToWords ds = map (\(d1, d2, d3) -> (dToW d1, dToW d2, dToW d3)) ds
+
+dToW :: Double -> Word8
+dToW d = fromIntegral (round d)
 
 fileName = "haha.ppm"
 size = 1000
