@@ -4,7 +4,7 @@ import DataTypes
 import Util
 import Rachel
 import Data.List
-import qualified Data.Matrix as M
+import Data.Array
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
@@ -123,23 +123,28 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> M.Matrix Color
+sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> Array (Int, Int) Color
 sendRay image@(Image img_width img_height) camera surfaces objects lights pigments
-  = sendRayPixel image_data image (img_height - 1, img_width - 1) camera surfaces objects lights pigments where
-  sendRayPixel :: M.Matrix Color -> Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> M.Matrix Color
-  sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights pigments
-    = let ray   = constructRay image pixel camera surfaces objects lights
-          color = trace ray surfaces objects lights pigments 0
-      in writePixel mat 1 1 color
-  sendRayPixel mat image@(Image img_width _) pixel@(r, 0) camera surfaces objects lights pigments
-    = let ray         = constructRay image pixel camera surfaces objects lights
-          color       = trace ray surfaces objects lights pigments 0
-          mat_written = writePixel mat (r + 1) 1 color
-      in sendRayPixel mat_written image (r - 1, img_width - 1) camera surfaces objects lights pigments
-  sendRayPixel mat image pixel@(r, c) camera surfaces objects lights pigments
-    = let ray         = constructRay image pixel camera surfaces objects lights
-          color       = trace ray surfaces objects lights pigments 0
-          mat_written = writePixel mat (r + 1) (c + 1) color
-      in sendRayPixel mat_written image (r, c - 1) camera surfaces objects lights pigments
-
-image_data = M.fromList size size (replicate (size * size) (Vec3 0 0 0))
+  = array ((0, 0), (img_height - 1, img_width - 1)) [((x, y), c) |
+                                                       x <- [0..img_height - 1]
+                                                     , y <- [0..img_width - 1]
+                                                     , let ray = constructRay image (x, y) camera surfaces objects lights
+                                                     , let c = trace ray surfaces objects lights pigments 0]
+-- sendRay image@(Image img_width img_height) camera surfaces objects lights pigments
+--   = sendRayPixel image_data image (img_height - 1, img_width - 1) camera surfaces objects lights pigments where
+--   sendRayPixel :: M.Matrix Color -> Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> M.Matrix Color
+--   sendRayPixel mat image pixel@(0, 0) camera surfaces objects lights pigments
+--     = let ray   = constructRay image pixel camera surfaces objects lights
+--           color = trace ray surfaces objects lights pigments 0
+--       in writePixel mat 1 1 color
+--   sendRayPixel mat image@(Image img_width _) pixel@(r, 0) camera surfaces objects lights pigments
+--     = let ray         = constructRay image pixel camera surfaces objects lights
+--           color       = trace ray surfaces objects lights pigments 0
+--           mat_written = writePixel mat (r + 1) 1 color
+--       in sendRayPixel mat_written image (r - 1, img_width - 1) camera surfaces objects lights pigments
+--   sendRayPixel mat image pixel@(r, c) camera surfaces objects lights pigments
+--     = let ray         = constructRay image pixel camera surfaces objects lights
+--           color       = trace ray surfaces objects lights pigments 0
+--           mat_written = writePixel mat (r + 1) (c + 1) color
+--       in sendRayPixel mat_written image (r, c - 1) camera surfaces objects lights pigments
+-- image_data = M.fromList size size (replicate (size * size) (Vec3 0 0 0))
