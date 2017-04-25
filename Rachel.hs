@@ -103,7 +103,7 @@ doublesToVec3 ds
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
 getIntersect :: Ray -> Object -> Double
 getIntersect (Ray origin dir) (Sphere center radius _ _)
-  | delta < 0  = TR.trace ("delta: " ++ show delta ++ " x: " ++ show x ++ " y: " ++ show y ++ " z: " ++ show z ) (-1)
+  | delta < 0  = -1
   | delta == 0 = let t = -y / (2 * x) in
     if t < 0 then -1 else t
   | otherwise  =

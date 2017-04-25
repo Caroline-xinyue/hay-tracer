@@ -24,10 +24,10 @@ calcSpecular :: Double -> Double -> Ray -> Vec3 -> Vec3 -> Color
 calcSpecular ks alpha (Ray _ dir) light_dir normal
   | ks <= 0 = Vec3 0 0 0
   | otherwise =
-  let n_dir = TR.trace ("l_dir: " ++ show light_dir) (normalize light_dir)
-      specularIntensity = TR.trace ("dir: " ++ show dir ++ "normal: " ++ show normal) ((dot normal (normalize (minus n_dir dir))) ** alpha)
+  let n_dir = normalize light_dir
+      specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
   in if specularIntensity <= 0 then Vec3 0 0 0
-     else multScaler (Vec3 1.0 1.0 1.0) ((TR.trace ("specularIntensity: " ++ show specularIntensity) specularIntensity) * ks)
+     else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
 
 getSurfaceParam :: [Surface] -> Int -> PhongCoef
 getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
@@ -50,7 +50,7 @@ lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
         n_dir = normalize light_dir
         shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
         visible = checkVisible shadow_ray intersectPt light objs
-    in if visible then TR.trace ("diffuse: " ++ show diffuseCol ++ "specular: " ++ show specularCol) (plus diffuseCol specularCol)
+    in if visible then plus diffuseCol specularCol
        else Vec3 0 0 0
 
 -- Calculate the color of a point on an object based on the Phong reflection model
@@ -65,7 +65,7 @@ phong ray intersectPt intersectObj objs lights surfaces pigments
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
 checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
-  case TR.trace (show t) (checkIntersect ray objs) of
+  case checkIntersect ray objs of
     Nothing                         -> if t < 0 then Nothing
                                        else Just (obj, t)
     Just min_intersect@(_, min_pos) -> if t < 0 then Just min_intersect
