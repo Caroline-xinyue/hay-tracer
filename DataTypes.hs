@@ -1,12 +1,16 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+
 module DataTypes where
 
 import Prelude
+import Control.DeepSeq
+import GHC.Generics
 
 type Point = Vec3
 type Color = Vec3
 
 data Vec3 = Vec3 Double Double Double
-  deriving Show
+  deriving (Show, Generic, NFData)
 data Vec4 = Vec4 Double Double Double Double
   deriving Show
 

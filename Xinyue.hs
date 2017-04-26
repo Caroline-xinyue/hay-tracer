@@ -6,6 +6,7 @@ import Rachel
 import Data.List
 import Data.Array
 import qualified Debug.Trace as TR
+import Control.Parallel.Strategies (using, parListChunk, rdeepseq)
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
@@ -117,8 +118,8 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
 sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> Array (Int, Int) Color
 sendRay image@(Image img_width img_height) camera surfaces objects lights pigments
-  = array ((0, 0), (img_height - 1, img_width - 1)) [((x, y), c) |
+  = array ((0, 0), (img_height - 1, img_width - 1)) ([((x, y), c) |
                                                        x <- [0..img_height - 1]
                                                      , y <- [0..img_width - 1]
                                                      , let ray = constructRay image (x, y) camera surfaces objects lights
-                                                     , let c = trace ray surfaces objects lights pigments 0]
+                                                     , let c = trace ray surfaces objects lights pigments 0] `using` parListChunk 250000 rdeepseq)
