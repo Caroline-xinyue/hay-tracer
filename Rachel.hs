@@ -11,10 +11,7 @@ import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Debug.Trace as TR
 import qualified Data.ByteString.Lazy as BIN
-import qualified Data.ByteString.Char8 as DBC8
 import qualified Data.Serialize as DS
--- import qualified Data.ByteString.Conversion as DBC
--- import qualified Data.Double.Conversion.ByteString as DD
 
 -- ========================================================================
 -- get color from pigment
@@ -164,13 +161,6 @@ vec3ListToTuple (x : xs) = vec3ToTuple x : vec3ListToTuple xs
 vec3ToTuple :: Vec3 -> (Double, Double, Double)
 vec3ToTuple (Vec3 x y z) = (x, y, z)
 
--- doublesToBStrings :: [(Double, Double, Double)] -> [(BIN.ByteString,BIN.ByteString,BIN.ByteString)]
--- doublesToBStrings ds = map (\(d1, d2, d3) -> (dToB d1, dToB d2, dToB d3)) ds
-
--- dToB :: Double -> BIN.ByteString
--- dToB d = DS.encodeLazy d
--- dToB d = BIN.fromChunks [DBC8.pack (show d)]
-
 doublesToWords :: [(Double, Double, Double)] -> [(Word8,Word8,Word8)]
 doublesToWords ds = map (\(d1, d2, d3) -> (dToW d1, dToW d2, dToW d3)) ds
 
@@ -184,5 +174,3 @@ matrix = array ((0, 0), (size - 1, size - 1)) [((x, y), c) |
                                        x <- [0..size - 1],
                                        y <- [0..size - 1],
                                        let c = Vec3 255 0 0]
--- mat = M.fromList size size (replicate (size * size) (Vec3 255 0 0))
--- mat2 = writePixel mat 1 1 (Vec3 0 255 0)
