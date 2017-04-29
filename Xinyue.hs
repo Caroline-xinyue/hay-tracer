@@ -108,7 +108,7 @@ getViewDimension (Image img_width img_height) (Camera _ _ _ fovy) = Vector2 widt
 
 constructRay :: Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> Ray
 constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _) _ _ _
-  = let trans@(Vector3 cx cy cz)     = viewTransform camera
+  = let (Vector3 cx cy cz)     = viewTransform camera
         (Vector2 width height) = getViewDimension image camera
         pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
         pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
