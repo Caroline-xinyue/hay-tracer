@@ -76,17 +76,27 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
 
 reflection :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
-  let normal = getNormal intersectObj intersectPt
-      kr = getKr (surfaces !! (getNf intersectObj))
+  let normal         = getNormal intersectObj intersectPt
+      kr             = getKr (surfaces !! (getNf intersectObj))
       reflection_dir = normalize (reflect direction normal)
       reflection_ray = Ray (plus intersectPt (multScaler reflection_dir 0.01)) reflection_dir
   in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.001
      else Vec3 0 0 0
 
-refraction :: Ray -> Point -> Object -> [Object] -> [Surface] -> Color
-refraction = error "Not Implemented"
--- kt = getKt (surfaces !! (getNf intersectObj))
--- ki = getKi (surfaces !! (getNf intersectObj))
+refraction :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
+  let normal         = getNormal intersectObj intersectPt
+      isIn           = dot normal direction > 0
+      new_normal     = if isIn then (multScaler normal (-1)) else normal
+      kt             = getKt (surfaces !! (getNf intersectObj))
+      ki             = getKi (surfaces !! (getNf intersectObj))
+      n              = if isIn then ki else 1 / ki
+      c1             = (-1) * (dot direction new_normal)
+      c2             = 1 - (n * n * (1 - c1 * c1))
+      refraction_dir = normalize (plus (multScaler direction n) (multScaler new_normal (n * c1 - sqrt(c2))))
+      refraction_ray = Ray (plus intersectPt (multScaler refraction_dir 0.01)) refraction_dir
+  in if kt > 0 then multScaler (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
+     else Vec3 0 0 0
 
 shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 shader _ [] _ _ _ _
@@ -94,10 +104,11 @@ shader _ [] _ _ _ _
 shader ray@(Ray origin direction) objs lights surfaces pigments depth
   = case checkIntersect ray objs of
     Nothing                 -> Vec3 0.5 0.5 0.5
-    Just (min_obj, min_pos) -> plus phongCol reflectCol where
-      point = plus origin (multScaler direction min_pos)
-      phongCol = phong ray point min_obj objs lights surfaces pigments
+    Just (min_obj, min_pos) -> plus3 phongCol reflectCol refractCol where
+      point      = plus origin (multScaler direction min_pos)
+      phongCol   = phong ray point min_obj objs lights surfaces pigments
       reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
+      refractCol = refraction ray point min_obj objs lights surfaces pigments depth
 
 -- Given ray and depth, compute lighting, namely local + reflection + refraction
 trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
