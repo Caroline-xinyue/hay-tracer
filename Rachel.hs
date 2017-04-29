@@ -11,7 +11,7 @@ import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Debug.Trace as TR
 import qualified Data.ByteString.Lazy as BIN
-import qualified Data.Serialize as DS
+-- import qualified Data.Serialize as DS
 
 -- ========================================================================
 -- get color from pigment

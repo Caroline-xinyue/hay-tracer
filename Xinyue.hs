@@ -31,6 +31,7 @@ calcSpecular ks alpha (Ray _ dir) light_dir normal
      else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
 
 getSurfaceParam :: [Surface] -> Int -> PhongCoef
+-- TODO: partial !! when [Surface] is []
 getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
 
 checkVisible :: Ray -> Point -> Light -> [Object] -> Bool
@@ -73,25 +74,36 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
                                        else if t < min_pos then Just (obj, t)
                                              else Just min_intersect
 
-shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
-shader _ [] _ _ _                                               = Vec3 0.5 0.5 0.5
-shader ray@(Ray origin direction) objs lights surfaces pigments = case checkIntersect ray objs of
-     Nothing                 -> Vec3 0.5 0.5 0.5
-     Just (min_obj, min_pos) -> phong ray point min_obj objs lights surfaces pigments where
-       point = plus origin (multScaler direction min_pos)
+reflection :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
+  let normal = getNormal intersectObj intersectPt
+      kr = getKr (surfaces !! (getNf intersectObj))
+      reflection_dir = normalize (reflect direction normal)
+      reflection_ray = Ray (plus intersectPt (multScaler reflection_dir 0.01)) reflection_dir
+  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.004
+     else Vec3 0 0 0
 
-reflection :: Ray -> [Surface] -> [Object] -> Color
-reflection = error "Not Implemented"
-
-refraction :: Ray -> [Surface] -> [Object] -> Color
+refraction :: Ray -> Point -> Object -> [Object] -> [Surface] -> Color
 refraction = error "Not Implemented"
+-- kt = getKt (surfaces !! (getNf intersectObj))
+-- ki = getKi (surfaces !! (getNf intersectObj))
+
+shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+shader _ [] _ _ _ _
+  = Vec3 0.5 0.5 0.5
+shader ray@(Ray origin direction) objs lights surfaces pigments depth
+  = case checkIntersect ray objs of
+    Nothing                 -> Vec3 0.5 0.5 0.5
+    Just (min_obj, min_pos) -> plus phongCol reflectCol where
+      point = plus origin (multScaler direction min_pos)
+      phongCol = phong ray point min_obj objs lights surfaces pigments
+      reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
 
 -- Given ray and depth, compute lighting, namely local + reflection + refraction
-trace :: Ray -> [Surface] -> [Object] -> [Light] -> [Pigment] -> Int -> Color
-trace ray@(Ray _ _) surfaces objs lights pigments depth =
+trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+trace ray@(Ray _ _) objs lights surfaces pigments depth =
   if depth > 20 then Vec3 127.5 127.5 127.5
-  -- else clampVec (multScaler (shader ray objs lights surfaces pigments) 255) (Vec3 0 0 0) (Vec3 255 255 255)
-  else clampVec (multScaler (shader ray objs lights surfaces pigments) 255) (Vec3 0 0 0) (Vec3 255 255 255)
+  else clampVec (multScaler (shader ray objs lights surfaces pigments depth) 255) (Vec3 0 0 0) (Vec3 255 255 255)
 
 -- Perform view transformation similar to glm::lookAt
 viewTransform :: Camera -> Vector3 Vec3
@@ -106,20 +118,21 @@ getViewDimension (Image img_width img_height) (Camera _ _ _ fovy) = Vector2 widt
   height      = 2 * tan (radians (0.5 * fovy))
   width       = height * aspectratio
 
-constructRay :: Image -> (Int, Int) -> Camera -> [Surface] -> [Object] -> [Light] -> Ray
-constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _) _ _ _
+constructRay :: Image -> (Int, Int) -> Camera -> Ray
+constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
   = let (Vector3 cx cy cz)     = viewTransform camera
         (Vector2 width height) = getViewDimension image camera
         pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
         pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
-        dir = normalize (plus (plus (multScaler cx pc) (multScaler cy pr)) (multScaler cz (-1)))
+        dir = normalize (plus3 (multScaler cx pc) (multScaler cy pr) (multScaler cz (-1)))
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
-sendRay :: Image -> Camera -> [Surface] -> [Object] -> [Light] -> [Pigment] -> Array (Int, Int) Color
-sendRay image@(Image img_width img_height) camera surfaces objects lights pigments
-  = array ((0, 0), (img_height - 1, img_width - 1)) ([((x, y), c) |
+-- TODO: clean up all function signatures, especially check for the list types
+sendRay :: Image -> Camera -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Array (Int, Int) Color
+sendRay image@(Image img_width img_height) camera objects lights surfaces pigments
+  = array ((0, 0), (img_height - 1, img_width - 1)) [((x, y), c) |
                                                        x <- [0..img_height - 1]
                                                      , y <- [0..img_width - 1]
-                                                     , let ray = constructRay image (x, y) camera surfaces objects lights
-                                                     , let c = trace ray surfaces objects lights pigments 0] `using` parListChunk 250000 rdeepseq)
+                                                     , let ray = constructRay image (x, y) camera
+                                                     , let c = trace ray objects lights surfaces pigments 0]

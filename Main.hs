@@ -35,7 +35,7 @@ main = do
       pigments = readPigments pigInputs
       surfaces = readSurfaces sfInputs
       objects  = readObjects objInputs
-      img_data = sendRay image camera surfaces objects lights pigments
+      img_data = sendRay image camera objects lights surfaces pigments
   write_ppm6 fileName image img_data
 
   -- size     = 100
