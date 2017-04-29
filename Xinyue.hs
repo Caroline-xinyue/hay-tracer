@@ -80,7 +80,7 @@ reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
       kr = getKr (surfaces !! (getNf intersectObj))
       reflection_dir = normalize (reflect direction normal)
       reflection_ray = Ray (plus intersectPt (multScaler reflection_dir 0.01)) reflection_dir
-  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.004
+  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.001
      else Vec3 0 0 0
 
 refraction :: Ray -> Point -> Object -> [Object] -> [Surface] -> Color
