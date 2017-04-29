@@ -128,6 +128,7 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
+-- TODO: clean up all function signatures, especially check for the list types
 sendRay :: Image -> Camera -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Array (Int, Int) Color
 sendRay image@(Image img_width img_height) camera objects lights surfaces pigments
   = array ((0, 0), (img_height - 1, img_width - 1)) [((x, y), c) |
