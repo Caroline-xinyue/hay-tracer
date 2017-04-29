@@ -98,6 +98,7 @@ refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
   in if kt > 0 then multScaler (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
      else Vec3 0 0 0
 
+-- TODO: phong might still have some overflow in color computation, causing reflection and refraction needs to use different parameters
 shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 shader _ [] _ _ _ _
   = Vec3 0.5 0.5 0.5
