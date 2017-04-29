@@ -72,7 +72,7 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
                                        else Just (obj, t)
     Just min_intersect@(_, min_pos) -> if t < 0 then Just min_intersect
                                        else if t < min_pos then Just (obj, t)
-                                             else Just min_intersect
+                                            else Just min_intersect
 
 reflection :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
