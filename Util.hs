@@ -7,6 +7,9 @@ minus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
 plus :: Vec3 -> Vec3 -> Vec3
 plus (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
 
+plus3 :: Vec3 -> Vec3 -> Vec3 -> Vec3
+plus3 (Vec3 x1 y1 z1) (Vec3 x2 y2 z2) (Vec3 x3 y3 z3) = Vec3 (x1 + x2 + x3) (y1 + y2 + y3) (z1 + z2 + z3)
+
 vlength :: Vec3 -> Double
 vlength vec = sqrt (dot vec vec)
 

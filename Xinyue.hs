@@ -74,17 +74,6 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
                                        else if t < min_pos then Just (obj, t)
                                              else Just min_intersect
 
-shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
-shader _ [] _ _ _ _
-  = Vec3 0.5 0.5 0.5
-shader ray@(Ray origin direction) objs lights surfaces pigments depth
-  = case checkIntersect ray objs of
-    Nothing                 -> Vec3 0.5 0.5 0.5
-    Just (min_obj, min_pos) -> plus phongCol reflectCol where
-      point = plus origin (multScaler direction min_pos)
-      phongCol = phong ray point min_obj objs lights surfaces pigments
-      reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
-
 reflection :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
   let normal = getNormal intersectObj intersectPt
@@ -98,6 +87,17 @@ refraction :: Ray -> Point -> Object -> [Object] -> [Surface] -> Color
 refraction = error "Not Implemented"
 -- kt = getKt (surfaces !! (getNf intersectObj))
 -- ki = getKi (surfaces !! (getNf intersectObj))
+
+shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+shader _ [] _ _ _ _
+  = Vec3 0.5 0.5 0.5
+shader ray@(Ray origin direction) objs lights surfaces pigments depth
+  = case checkIntersect ray objs of
+    Nothing                 -> Vec3 0.5 0.5 0.5
+    Just (min_obj, min_pos) -> plus phongCol reflectCol where
+      point = plus origin (multScaler direction min_pos)
+      phongCol = phong ray point min_obj objs lights surfaces pigments
+      reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
 
 -- Given ray and depth, compute lighting, namely local + reflection + refraction
 trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
@@ -124,7 +124,7 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
         (Vector2 width height) = getViewDimension image camera
         pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
         pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
-        dir = normalize (plus (plus (multScaler cx pc) (multScaler cy pr)) (multScaler cz (-1)))
+        dir = normalize (plus3 (multScaler cx pc) (multScaler cy pr) (multScaler cz (-1)))
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
