@@ -22,6 +22,9 @@ normalize vec =
   in if mag /= 0 then multScaler vec (1.0 / mag)
      else Vec3 0 0 0
 
+reflect :: Vec3 -> Vec3 -> Vec3
+reflect vec normal = plus vec (multScaler normal ((-2) * (dot vec normal)))
+
 radians :: Double -> Double
 radians x = (x * 3.1415926535897) / 180
 
