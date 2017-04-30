@@ -80,7 +80,7 @@ reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
       kr             = getKr (surfaces !! (getNf intersectObj))
       reflection_dir = normalize (reflect direction normal)
       reflection_ray = Ray (plus intersectPt (multScaler reflection_dir 0.01)) reflection_dir
-  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.001
+  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.002
      else Vec3 0 0 0
 
 refraction :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
@@ -100,8 +100,8 @@ refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
 
 -- TODO: phong might still have some overflow in color computation, causing reflection and refraction needs to use different parameters
 shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
-shader _ [] _ _ _ _
-  = Vec3 0.5 0.5 0.5
+shader _ _ _ [] _ _ = Vec3 0.5 0.5 0.5
+shader _ _ _ _ [] _ = Vec3 0.5 0.5 0.5
 shader ray@(Ray origin direction) objs lights surfaces pigments depth
   = case checkIntersect ray objs of
     Nothing                 -> Vec3 0.5 0.5 0.5
