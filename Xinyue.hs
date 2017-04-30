@@ -8,6 +8,7 @@ import Data.Array
 import qualified Debug.Trace as TR
 import Control.Parallel.Strategies (using, parListChunk, rdeepseq)
 
+-- TODO: try using more maps folds and filters
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
   | kd <= 0 = Vec3 0 0 0
