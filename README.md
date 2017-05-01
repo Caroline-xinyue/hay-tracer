@@ -113,7 +113,7 @@ and learnt to get out of imperative design to get used to the functional thinkin
 <!--  
 write ppm
 
-Origonally implemented imperatively using for loop in C
+Originally implemented imperatively using for loop in C
 sendRay for each pixel: tedious recursion to list comprehension
 phong model sum of initColor and the lit color from each light, changes from using tedious recursion
 to the usage of higher order function including foldr and map
