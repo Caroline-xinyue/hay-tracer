@@ -158,7 +158,7 @@ trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 trace ray@(Ray origin direction) objs lights surfaces pigments depth
   = if depth > 20 then Vec3 127.5 127.5 127.5
     else case checkIntersect ray objs of
-           Nothing                 -> Vec3 0.5 0.5 0.5
+           Nothing                 -> Vec3 127.5 127.5 127.5
            Just (min_obj, min_pos) -> clampVec (multScalar col 255) (Vec3 0 0 0) (Vec3 255 255 255) where
              point      = plus origin (multScalar direction min_pos)
              phongCol   = phong ray point min_obj objs lights surfaces pigments

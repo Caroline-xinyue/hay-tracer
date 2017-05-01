@@ -50,6 +50,6 @@ clamp x min max
  | x < min   = min
  | x > max   = max
  | otherwise = x
- 
+
 vdistance :: Vec3 -> Vec3 -> Double
 vdistance v1 v2 = let d = minus v2 v1 in vlength d
