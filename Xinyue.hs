@@ -5,8 +5,6 @@ import Util
 import Rachel
 import Data.List
 import Data.Array
-import qualified Debug.Trace as TR
-import Control.Parallel.Strategies (using, parListChunk, rdeepseq)
 
 -- TODO: try using more maps folds and filters
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
@@ -24,27 +22,29 @@ calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse
 
 calcSpecular :: Double -> Double -> Ray -> Vec3 -> Vec3 -> Color
 calcSpecular ks alpha (Ray _ dir) light_dir normal
-  | ks <= 0 = Vec3 0 0 0
+  | ks <= 0   = Vec3 0 0 0
   | otherwise =
-  let n_dir = normalize light_dir
-      specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
-  in if specularIntensity <= 0 then Vec3 0 0 0
-     else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
-
-getSurfaceParam :: [Surface] -> Int -> PhongCoef
--- TODO: partial !! when [Surface] is []
-getSurfaceParam surfaces surfaceIdx = case surfaces !! surfaceIdx of (Surface phongCoef _ _ _) -> phongCoef
+    let n_dir = normalize light_dir
+        specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
+    in if specularIntensity <= 0 then Vec3 0 0 0
+       else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
 
 checkVisible :: Ray -> Point -> Light -> [Object] -> Bool
-checkVisible _ _ _ [] = True
+checkVisible _ _ _ []
+  = True
 checkVisible shadow_ray intersectPt light@(Light light_pos _ _) (obj : objs)
   = let point = getIntersect shadow_ray obj
     in if point < 0 || point > vdistance intersectPt light_pos then checkVisible shadow_ray intersectPt light objs
        else False
 
 lit :: Ray -> Point -> Object -> [Object] -> [Surface] -> [Pigment] -> Light -> Color
+lit _ _ _ _ [] _ _
+  = Vec3 0 0 0
+lit _ _ _ _ _ [] _
+  = Vec3 0 0 0
 lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
-  = let (PhongCoef _ kd ks alpha) = getSurfaceParam surfaces (getNf intersectObj)
+  = let (PhongCoef _ kd ks alpha) = case surfaces !! (getNf intersectObj) of
+                                          (Surface phongCoef _ _ _) -> phongCoef
         normal  = getNormal intersectObj intersectPt
         diffuse = getColor (pigments !! (getNp intersectObj)) intersectPt
         light_dir = minus pos intersectPt
@@ -59,6 +59,8 @@ lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
 -- Calculate the color of a point on an object based on the Phong reflection model
 phong :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Color
 phong _ _ _ _ [] _ _
+  = Vec3 0.5 0.5 0.5
+phong _ _ _ _ _ [] _
   = Vec3 0.5 0.5 0.5
 phong ray intersectPt intersectObj objs lights surfaces pigments
   = foldr plus initColor (map litColor (tail lights)) where
@@ -76,6 +78,8 @@ checkIntersect ray (obj : objs) = let t = getIntersect ray obj in
                                             else Just min_intersect
 
 reflection :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+reflection _ _ _ _ _ [] _ _
+  = Vec3 0.5 0.5 0.5
 reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
   let normal         = getNormal intersectObj intersectPt
       kr             = getKr (surfaces !! (getNf intersectObj))
@@ -85,6 +89,8 @@ reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
      else Vec3 0 0 0
 
 refraction :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
+refraction _ _ _ _ _ [] _ _
+  = Vec3 0.5 0.5 0.5
 refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
   let normal         = getNormal intersectObj intersectPt
       isIn           = dot normal direction > 0
@@ -99,10 +105,7 @@ refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
   in if kt > 0 then multScaler (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
      else Vec3 0 0 0
 
--- TODO: phong might still have some overflow in color computation, causing reflection and refraction needs to use different parameters
 shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
-shader _ _ _ [] _ _ = Vec3 0.5 0.5 0.5
-shader _ _ _ _ [] _ = Vec3 0.5 0.5 0.5
 shader ray@(Ray origin direction) objs lights surfaces pigments depth
   = case checkIntersect ray objs of
     Nothing                 -> Vec3 0.5 0.5 0.5
@@ -140,8 +143,6 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
         dir = normalize (plus3 (multScaler cx pc) (multScaler cy pr) (multScaler cz (-1)))
     in Ray pos dir
 
--- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
--- TODO: clean up all function signatures, especially check for the list types
 sendRay :: Image -> Camera -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Array (Int, Int) Color
 sendRay image@(Image img_width img_height) camera objects lights surfaces pigments
   = array ((0, 0), (img_height - 1, img_width - 1)) [((x, y), c) |
