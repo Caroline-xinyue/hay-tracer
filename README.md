@@ -1,5 +1,16 @@
 # Hay Tracer
 
+### Compile and Run
+Please compile the program using the compiler with the high optimization flag: ghc -O2 Main.hs
+The program can be run as ./Main [input file] (eg. ./Main test1.in)
+
+We provide six test input files in the input folder with their corresponding sample output images rendered from our HayTracer.
+
+Current Hay Tracer supports Sphere and Plane rendering, both solid colored and checkerboard textured objects, ambient, diffuse and specular shading, and both reflection and refraction. Further improvements include supporting more objects and Parallelize the program so that we can support anti-aliasing(super-sampling using 9 rays per pixel to reduce blurring edges)
+
+---
+
+
 ### Input and Output Format
 Input:
 - The input file is accepted as command line argument
