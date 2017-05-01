@@ -1,7 +1,7 @@
 module Main where
 
-import Rachel
-import Xinyue
+import IO
+import HayTrace
 import Prelude
 import DataTypes
 import System.IO

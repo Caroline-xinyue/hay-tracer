@@ -70,7 +70,7 @@ Output:
    - `getNormal`
 
 
-`hayTrace.hs` contains the following functions:
+`HayTrace.hs` contains the following functions:
 - `constructRay` (construct ray from image dimension and camera info)
 - `sendRay` (construct and trace the ray for each pixel)
 - `viewTransform` (perform view transformation similar to glm::lookAt)
@@ -105,18 +105,19 @@ Output:
 
 ### Reflections
 - What Went Well
-  - version control and collaboration through Github
-  - rewrite C code in idiomatic Haskell
-  - I/O
-- What Went Poorly
   - translating C code into Haskell directly: Originally implemented imperatively using for loop in C
   sendRay for each pixel: tedious recursion to list comprehension
   phong model sum of initColor and the lit color from each light, changes from using tedious recursion
   to the usage of higher order function including foldr and map
-
   - struggling with different types of Strings: Initially I tried directly converting `Double` to `ByteString` and write the resulting `ByteString`s to the output file. For some reason, the output contained plain strings, contrary to what I understood about `ByteString`s. I also converted `Double` to `ByteString` the wrong way: I first converted `Double` to `String`, then used `pack` to convert `String` to `Internal.String`, then used `fromChunks` to convert `Internal.String` to `String`. The entire process was confusing and the code ended up very inefficient. However, things got much better after I converted `Double` to `Word8` and packed `Word8` into `ByteString`. I do get why this works and this is more efficient, but I am not sure why the original solution did not output binary strings.
   - debugging: we made a few simple mistakes in our code, and ended up spending lots of time incorporating the `trace` function into our code and change it back afterwards. We did successfully find the bug and it looks like using the `trace` function is one of easiest way of debugging, but it was a bit more time-consuming than we thought and required minor changes to the structure of our code.
+  - version control and collaboration through Github
+  - rewrite C code in idiomatic Haskell
+  - I/O
+- What Went Poorly
+  - struggling with different types of Strings
+  - debugging
 - What Can Be Improved
   - Add support for more objects such as polyhedron and triangular meshes
-  - Parallelize the code
-  - Implement antialiasing
+  - Parallelize the code for better performance
+  - Implement antialiasing to have smoother edges

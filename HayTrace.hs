@@ -1,10 +1,60 @@
-module Xinyue where
+module HayTrace where
 
 import DataTypes
 import Util
-import Rachel
+import IO
 import Data.List
 import Data.Array
+
+-- ========================================================================
+-- get color from pigment
+
+getColor :: Pigment -> Point -> Color
+getColor (Solid color) _           = color
+getColor (CheckerBoard c1 c2 sideLen) (Vec3 x y z)
+  | (pxs + pys + pzs) `mod` 2 == 0 = c1
+  | otherwise                      = c2
+  where
+    pxs = floor (x / sideLen) :: Int
+    pys = floor (y / sideLen) :: Int
+    pzs = floor (z / sideLen) :: Int
+
+-- =======================================================================
+-- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
+
+getIntersect :: Ray -> Object -> Double
+getIntersect (Ray origin dir) (Sphere center radius _ _)
+  | delta < 0  = -1
+  | delta == 0 = let t = -y / (2 * x) in
+    if t < 0 then -1 else t
+  | otherwise  =
+    let t1 = (-y + sqrt(delta)) / (2 * x)
+        t2 = (-y - sqrt(delta)) / (2 * x) in
+        if t1 < 0 && t2 < 0
+          then -1
+          else if t1 < 0 && t2 >= 0
+            then t2
+          else if t1 >= 0 && t2 < 0
+            then t1
+          else (min t1 t2)
+    where
+      center_origin = minus origin center
+      x             = dot dir dir
+      y             = 2 * (dot center_origin dir)
+      z             = (dot center_origin center_origin) - (radius ** 2)
+      delta         = y ** 2 - 4 * x * z
+getIntersect (Ray origin dir) (Plane (Vec4 a b c d) _ _)
+  | dot normal dir /= 0 = -((d + (dot origin normal)) / (dot dir normal))
+  | otherwise           = -1
+  where
+    normal = normalize $ Vec3 a b c
+
+-- ========================================================================
+-- Given a specific object and the point on object, compute the normal vector
+
+getNormal :: Object -> Point -> Vec3
+getNormal (Sphere center _ _ _) point  = normalize $ minus point center
+getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
