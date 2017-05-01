@@ -6,7 +6,6 @@ import Rachel
 import Data.List
 import Data.Array
 
--- TODO: try using more maps folds and filters
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
   | kd <= 0   = Vec3 0 0 0
@@ -105,21 +104,17 @@ refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
   in if kt > 0 then multScalar (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
      else Vec3 0 0 0
 
-shader :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
-shader ray@(Ray origin direction) objs lights surfaces pigments depth
-  = case checkIntersect ray objs of
-    Nothing                 -> Vec3 0.5 0.5 0.5
-    Just (min_obj, min_pos) -> plus3 phongCol reflectCol refractCol where
-      point      = plus origin (multScalar direction min_pos)
-      phongCol   = phong ray point min_obj objs lights surfaces pigments
-      reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
-      refractCol = refraction ray point min_obj objs lights surfaces pigments depth
-
--- Given ray and depth, compute lighting, namely local + reflection + refraction
 trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
-trace ray@(Ray _ _) objs lights surfaces pigments depth =
-  if depth > 20 then Vec3 127.5 127.5 127.5
-  else clampVec (multScalar (shader ray objs lights surfaces pigments depth) 255) (Vec3 0 0 0) (Vec3 255 255 255)
+trace ray@(Ray origin direction) objs lights surfaces pigments depth
+  = if depth > 20 then Vec3 127.5 127.5 127.5
+    else case checkIntersect ray objs of
+           Nothing                 -> Vec3 0.5 0.5 0.5
+           Just (min_obj, min_pos) -> clampVec (multScalar col 255) (Vec3 0 0 0) (Vec3 255 255 255) where
+             point      = plus origin (multScalar direction min_pos)
+             phongCol   = phong ray point min_obj objs lights surfaces pigments
+             reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
+             refractCol = refraction ray point min_obj objs lights surfaces pigments depth
+             col = plus3 phongCol reflectCol refractCol
 
 -- Perform view transformation similar to glm::lookAt
 viewTransform :: Camera -> Vector3 Vec3
