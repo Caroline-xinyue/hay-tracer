@@ -1,4 +1,4 @@
-# Hay-tracer
+# Hay Tracer
 
 ### Major functions
 `DataTypes.hs` contains the definitions of data types used in the project:
@@ -22,24 +22,43 @@
 
 `Rachel.hs` contains the following functions:
 1. **Reading input file:**
-   - readImage
-   - readCamera
-   - readLights
-   - readPigments
-   - readSurfaces
-   - readObjects
+   - `readImage`
+   - `readCamera`
+   - `readLights`
+   - `readPigments`
+   - `readSurfaces`
+   - `readObjects`
 2. **Writing to output file:**
-   - writePPM6
-   - writePPM (`String` to output file)
-   - stringPPM (`Word8` to `ByteString`)
+   - `writePPM6`
+   - `writePPM` (`String` to output file)
+   - `stringPPM` (`Word8` to `ByteString`)
 3. **Calculating intersections and normals:**
-   - getIntersect
-   - getNormal
+   - `getIntersect`
+   - `getNormal`
 
 ---
 
 `Xinyue.hs` contains the following functions:
 
+
+---
+
+`Util.hs` contains the following functions:
+1. **Vector operations:**
+   - `minus`
+   - `plus`
+   - `plus3` (add three `Vec3`s together)
+   - `vlength`
+   - `mult` (multiplication of corresponding components of two `Vec3`s)
+   - `multScalar` (scalar-vector multiplication)
+   - `normalize`
+   - `reflect` (calculate reflection vector)
+   - `radians` (degrees to radians)
+   - `dot` (dot product)
+   - `cross` (cross product)
+   - `clampVec`
+   - `clamp`
+   - `vdistance` (distance between two `Point`s)
 
 ---
 
