@@ -47,13 +47,11 @@ Output:
 - `PhongCoef`
 - `Surface`
 
----
 
 `Main.hs` contains the following function:
 - `main` (reads input and pass data to `sendRay` function, which returns an array of pixels that gets
   written to output by `writePPM6` function)
 
----
 
 `Rachel.hs` contains the following functions:
 1. **Reading input file:**
@@ -71,12 +69,20 @@ Output:
    - `getIntersect`
    - `getNormal`
 
----
 
 `Xinyue.hs` contains the following functions:
+- `sendRay`
+- `constructRay`
+- `trace`
+- `viewTransform`
+- `lit`
+- `phong`
+- `shader`
+- `reflection`
+- `refraction`
+- `calcDiffuse`
+- `calcSpecular`
 
-
----
 
 `Util.hs` contains the following functions:
 1. **Vector operations:**
@@ -102,7 +108,3 @@ Output:
 - What Went Well
 - What Went Poorly
 - What Can Be Improved
-
-
-
-Include in your project a README file that describes the project code, outlining where the major functions are written and, in general, what I should look for when reviewing your work. This file should also include reflections on the project process: What went well? What went poorly? What would you do differently if you had more time?
