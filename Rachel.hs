@@ -11,15 +11,15 @@ import qualified Data.Vector as V
 import qualified Data.Matrix as M
 import qualified Debug.Trace as TR
 import qualified Data.ByteString.Lazy as BIN
--- import qualified Data.Serialize as DS
 
 -- ========================================================================
 -- get color from pigment
+
 getColor :: Pigment -> Point -> Color
-getColor (Solid color) _ = color
+getColor (Solid color) _           = color
 getColor (CheckerBoard c1 c2 sideLen) (Vec3 x y z)
   | (pxs + pys + pzs) `mod` 2 == 0 = c1
-  | otherwise = c2
+  | otherwise                      = c2
   where
     pxs = floor (x / sideLen) :: Int
     pys = floor (y / sideLen) :: Int
@@ -29,19 +29,19 @@ getColor (CheckerBoard c1 c2 sideLen) (Vec3 x y z)
 -- Read input file into various GADTs
 
 readObjects :: [String] -> [Object]
-readObjects [] = []
+readObjects []       = []
 readObjects (x : xs) = obj : readObjects xs where
   nums = strToDoubles (unwords (filter (\str -> str /= "sphere" && str /= "plane") (words x)))
-  obj = case nums of
+  obj  = case nums of
     (a:b:c:d:e:f:_) -> case ((words x) !! 2) of
       "sphere" -> Sphere (Vec3 c d e) f (round a) (round b)
       "plane"  -> Plane (Vec4 c d e f) (round a) (round b)
       _        -> error "unknown object"
-    _ -> error "object data corrupted"
+    _               -> error "object data corrupted"
 
 
 readPigments :: [String] -> [Pigment]
-readPigments [] = []
+readPigments []       = []
 readPigments (x : xs) = pig : readPigments xs where
   pig = case ((words x) !! 0) of
     "solid"   -> Solid ((strToVec3s (drop 6 x)) !! 0)
@@ -49,7 +49,7 @@ readPigments (x : xs) = pig : readPigments xs where
     _         -> error "pigment data corrupted"
 
 readSurfaces :: [String] -> [Surface]
-readSurfaces [] = []
+readSurfaces []       = []
 readSurfaces (x : xs) = surface : readSurfaces xs where
   doubles = strToDoubles x
   surface = case doubles of
@@ -57,16 +57,16 @@ readSurfaces (x : xs) = surface : readSurfaces xs where
     _                 -> error "surface data corrupted"
 
 readLights :: [String] -> [Light]
-readLights [] = []
+readLights []       = []
 readLights (x : xs) = light : readLights xs where
-  vecs = strToVec3s x
+  vecs  = strToVec3s x
   light = Light (vecs !! 0) (vecs !! 1) (vecs !! 2)
 
 readImage :: String -> Image
 readImage str = Image w h where
-  dimensions = strToDoubles str
-  w = round $ dimensions !! 0
-  h = round $ dimensions !! 1
+  dimensions  = strToDoubles str
+  w           = round $ dimensions !! 0
+  h           = round $ dimensions !! 1
 
 readCamera :: [String] -> Camera
 readCamera (camera : at : up : fovy : []) = Camera c a u f where
@@ -74,7 +74,7 @@ readCamera (camera : at : up : fovy : []) = Camera c a u f where
   a = head $ strToVec3s at
   u = head $ strToVec3s up
   f = read fovy :: Double
-readCamera _ = error "camera data corrupted"
+readCamera _                              = error "camera data corrupted"
 
 strToVec3s :: String -> [Vec3]
 strToVec3s = groupDoubles . strToDoubles
@@ -86,18 +86,20 @@ strToDoubles str = map read (words str) :: [Double]
 -- [1.1, 2.2, 3.3, 4.4, 5.5, 6.6] -> [(Vec3 1.1 2.2 3.3), (Vec3 4.4, 5.5, 6.6)]
 groupDoubles :: [Double] -> [Vec3]
 groupDoubles ds
-  | length ds >= 3 = doublesToVec3 (take 3 ds) : (groupDoubles (drop 3 ds))
+  | length ds >= 3 = case doublesToVec3 (take 3 ds) of
+                       Nothing  -> []
+                       Just vec -> vec : (groupDoubles (drop 3 ds))
   | otherwise      = []
 
 -- [1.1, 2.2, 3.3] -> Vec3 1.1 2.2 3.3
-doublesToVec3 :: [Double] -> Vec3
+doublesToVec3 :: [Double] -> Maybe Vec3
 doublesToVec3 ds
-  | length ds == 3 = Vec3 (ds !! 0) (ds !! 1) (ds !! 2)
-  | otherwise      = error "list length is not 3"
+  | length ds == 3 = Just (Vec3 (ds !! 0) (ds !! 1) (ds !! 2))
+  | otherwise      = Nothing
 
 -- =======================================================================
-
 -- Given ray, a specific object, calculate the intersection distance from ray origin in view coordinates.
+
 getIntersect :: Ray -> Object -> Double
 getIntersect (Ray origin dir) (Sphere center radius _ _)
   | delta < 0  = -1
@@ -115,24 +117,24 @@ getIntersect (Ray origin dir) (Sphere center radius _ _)
           else (min t1 t2)
     where
       center_origin = minus origin center
-      x = dot dir dir
-      y = 2 * (dot center_origin dir)
-      z = (dot center_origin center_origin) - (radius ** 2)
-      delta = y ** 2 - 4 * x * z
+      x             = dot dir dir
+      y             = 2 * (dot center_origin dir)
+      z             = (dot center_origin center_origin) - (radius ** 2)
+      delta         = y ** 2 - 4 * x * z
 getIntersect (Ray origin dir) (Plane (Vec4 a b c d) _ _)
   | dot normal dir /= 0 = -((d + (dot origin normal)) / (dot dir normal))
   | otherwise           = -1
   where
     normal = normalize $ Vec3 a b c
 
-
+-- ========================================================================
 -- Given a specific object and the point on object, compute the normal vector
+
 getNormal :: Object -> Point -> Vec3
 getNormal (Sphere center _ _ _) point  = normalize $ minus point center
 getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 
 -- ========================================================================
--- TODO: Change function names to match the actual arguments
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
 writePPM6 :: String -> Image -> Array (Int, Int) Color -> IO()
 writePPM6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
@@ -166,11 +168,3 @@ doublesToWords ds = map (\(d1, d2, d3) -> (dToW d1, dToW d2, dToW d3)) ds
 
 dToW :: Double -> Word8
 dToW d = fromIntegral (round d)
-
-fileName = "haha.ppm"
-size = 1000
-image = Image size size
-matrix = array ((0, 0), (size - 1, size - 1)) [((x, y), c) |
-                                       x <- [0..size - 1],
-                                       y <- [0..size - 1],
-                                       let c = Vec3 255 0 0]
