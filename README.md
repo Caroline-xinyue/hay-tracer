@@ -48,9 +48,23 @@ Output:
 - `Surface`
 
 
-`Main.hs` contains the following function:
-- `main` (reads input and pass data to `sendRay` function, which returns an array of pixels that gets
-  written to output by `writePPM6` function)
+`Util.hs` contains the following functions:
+1. **Vector operations:**
+   - `minus`
+   - `plus`
+   - `plus3` (add three `Vec3`s together)
+   - `vlength` (length of a vector)
+   - `mult` (multiplication of corresponding components of two `Vec3`s)
+   - `multScalar` (scalar-vector multiplication)
+   - `dot` (dot product)
+   - `cross` (cross product)
+   - `normalize`
+2. **Other utility functions:**
+   - `reflect` (calculate reflection vector)
+   - `vdistance` (distance between two `Point`s)
+   - `radians` (degrees to radians)
+   - `clampVec` (calls clamp and clamps the Color within (0,0,0) and (255,255,255))
+   - `clamp`
 
 
 `IO.hs` contains the following functions:
@@ -77,45 +91,34 @@ Output:
 - `calcDiffuse` (calculate the diffuse color in phong model)
 - `calcSpecular` (calculate the specular color in phong model)
 - `lit` (sum of diffuse and specular)
-- `phong` (sum of phong shading from initColor and lit color from each light)
+- `phong` (sum of diffuse/specular color combination from each light on top of the initial ambient color in phong model)
 - `reflection` (recursively trace the reflection ray)
 - `refraction` (recursively trace the refraction ray)
 - `trace` (sum of phong shading, reflection and refraction)
 
 
-`Util.hs` contains the following functions:
-1. **Vector operations:**
-   - `minus`
-   - `plus`
-   - `plus3` (add three `Vec3`s together)
-   - `vlength` (length of a vector)
-   - `mult` (multiplication of corresponding components of two `Vec3`s)
-   - `multScalar` (scalar-vector multiplication)
-   - `dot` (dot product)
-   - `cross` (cross product)
-   - `normalize`
-2. **Other utility functions:**
-   - `reflect` (calculate reflection vector)
-   - `vdistance` (distance between two `Point`s)
-   - `radians` (degrees to radians)
-   - `clampVec` (calls clamp and clamps the Color within (0,0,0) and (255,255,255))
-   - `clamp`
+`Main.hs` contains the following function:
+- `main` (reads input and pass data to `sendRay` function, which returns an array of pixels that gets
+  written to output by `writePPM6` function)
 
 ---
 
 ### Reflections
 - What Went Well
-  - translating C code into Haskell directly: Originally implemented imperatively using for loop in C
-  sendRay for each pixel: tedious recursion to list comprehension
-  phong model sum of initColor and the lit color from each light, changes from using tedious recursion
-  to the usage of higher order function including foldr and map
   - version control and collaboration through Github
-  - rewrite C code in idiomatic Haskell
   - I/O
+  - rewrite C code in idiomatic Haskell
+      Originally we still think imperatively and follow the Ray Tracing algorithm which traverse through every image pixel using double for loops, so our initial attempt for the sendRay and phong functions used many tedious recursions.
+      Later on, we refactored those two functions using higher order functions and list comprehensions using the functional paradigm as follows:
+        - sendRay uses list comprehension to construct ray and trace each constructed ray for every image   pixel
+        - phong uses higher order functions including `foldr` and `map` to shade each pixel as the sum of diffuse and specular color combination from each light source on top of the initial ambient color, using the phong model.
 - What Went Poorly
-  - struggling with different types of Strings: Initially I tried directly converting `Double` to `ByteString` and write the resulting `ByteString`s to the output file. For some reason, the output contained plain strings, contrary to what I understood about `ByteString`s. I also converted `Double` to `ByteString` the wrong way: I first converted `Double` to `String`, then used `pack` to convert `String` to `Internal.String`, then used `fromChunks` to convert `Internal.String` to `String`. The entire process was confusing and the code ended up very inefficient. However, things got much better after I converted `Double` to `Word8` and packed `Word8` into `ByteString`. I do get why this works and this is more efficient, but I am not sure why the original solution did not output binary strings.
-  - debugging: we made a few simple mistakes in our code, and ended up spending lots of time incorporating the `trace` function into our code and change it back afterwards. We did successfully find the bug and it looks like using the `trace` function is one of easiest way of debugging, but it was a bit more time-consuming than we thought and required minor changes to the structure of our code.
+  - struggling with different types of Strings:
+      Initially we tried directly converting `Double` to `ByteString` and write the resulting `ByteString`s to the output file. For some reason, the output contained plain strings, contrary to what we understood about `ByteString`s. We also converted `Double` to `ByteString` the wrong way: We first converted `Double` to `String`, then used `pack` to convert `String` to `Internal.String`, then used `fromChunks` to convert `Internal.String` to `String`. The entire process was confusing and the code ended up very inefficient. However, things got much better after we converted `Double` to `Word8` and packed `Word8` into `ByteString`. We do get why this works and this is more efficient, but we are not sure why the original solution did not output binary strings.
+  - debugging:
+      we made a few simple mistakes in our code, and ended up spending lots of time incorporating the `trace` function from `Debug.Trace` package into our code and change it back after fixing the bugs. We did successfully find the bug and it looks like using the `trace` function is one of easiest way of debugging, but it was a bit more time-consuming than we thought and required minor changes to the structure of our code.
 - What Can Be Improved
   - Add support for more objects such as polyhedron and triangular meshes
   - Parallelize the code for better performance
   - Implement antialiasing to have smoother edges
+  - Currently if the input file is invalid, we choose to terminate the program with helpful error messages aiming to help user reformat their input file, however, we are wondering if there are better ways to catch and handle the input file exceptions.
