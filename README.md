@@ -106,5 +106,14 @@ Output:
 
 ### Reflections
 - What Went Well
+  - version control and collaboration through Github
+  - rewrite C code in idiomatic Haskell
+  - I/O
 - What Went Poorly
+  - translating C code into Haskell directly
+  - struggling with different types of Strings
+  - debugging
 - What Can Be Improved
+  - Add support for more objects such as polyhedron and triangular meshes
+  - Parallelize the code
+  - Implement antialiasing
