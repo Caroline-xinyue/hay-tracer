@@ -71,17 +71,16 @@ Output:
 
 
 `Xinyue.hs` contains the following functions:
-- `sendRay`
-- `constructRay`
-- `trace`
-- `viewTransform`
-- `lit`
-- `phong`
-- `shader`
-- `reflection`
-- `refraction`
-- `calcDiffuse`
-- `calcSpecular`
+- `constructRay` (construct ray from image dimension and camera info)
+- `sendRay` (construct and trace the ray for each pixel)
+- `viewTransform` (perform view transformation similar to glm::lookAt)
+- `calcDiffuse` (calculate the diffuse color in phong model)
+- `calcSpecular` (calculate the specular color in phong model)
+- `lit` (sum of diffuse and specular)
+- `phong` (sum of phong shading from initColor and lit color from each light)
+- `reflection` (recursively trace the reflection ray)
+- `refraction` (recursively trace the refraction ray)
+- `trace` (sum of phong shading, reflection and refraction)
 
 
 `Util.hs` contains the following functions:
@@ -89,7 +88,7 @@ Output:
    - `minus`
    - `plus`
    - `plus3` (add three `Vec3`s together)
-   - `vlength`
+   - `vlength` (length of a vector)
    - `mult` (multiplication of corresponding components of two `Vec3`s)
    - `multScalar` (scalar-vector multiplication)
    - `dot` (dot product)
@@ -99,12 +98,27 @@ Output:
    - `reflect` (calculate reflection vector)
    - `vdistance` (distance between two `Point`s)
    - `radians` (degrees to radians)
-   - `clampVec`
+   - `clampVec` (calls clamp and clamps the Color within (0,0,0) and (255,255,255))
    - `clamp`
 
 ---
 
 ### Reflections
 - What Went Well
+<!--
+Generally the programming went smoothly and interesting. We together brainstorm the idea
+and learnt to get out of imperative design to get used to the functional thinking style.
+-->
 - What Went Poorly
+<!--  
+write ppm
+
+Origonally implemented imperatively using for loop in C
+sendRay for each pixel: tedious recursion to list comprehension
+phong model sum of initColor and the lit color from each light, changes from using tedious recursion
+to the usage of higher order function including foldr and map
+-->
 - What Can Be Improved
+<!--
+more objects
+-->
