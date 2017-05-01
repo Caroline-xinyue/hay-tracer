@@ -10,25 +10,25 @@ import Control.Parallel.Strategies (using, parListChunk, rdeepseq)
 
 calcDiffuse :: Double -> Ray -> Light -> Vec3 -> Vec3 -> Vec3 -> Color
 calcDiffuse kd (Ray _ dir) (Light _ light_col (Vec3 a1 a2 a3)) light_dir diffuse normal
-  | kd <= 0 = Vec3 0 0 0
+  | kd <= 0   = Vec3 0 0 0
   | otherwise =
-    let new_normal = if (dot normal dir) > 0 then (multScaler normal (-1)) else normal
-        dist_to_light = vlength light_dir
-        n_dir = normalize light_dir
+    let new_normal = if (dot normal dir) > 0 then (multScalar normal (-1)) else normal
+        dist_to_light    = vlength light_dir
+        n_dir            = normalize light_dir
         diffuseIntensity = dot n_dir new_normal
-        att = a1 + a2 * dist_to_light + a3 * (dist_to_light ** 2)
-        attenuation = if att == 0 then 0.0001 else att
+        att              = a1 + a2 * dist_to_light + a3 * (dist_to_light ** 2)
+        attenuation      = if att == 0 then 0.0001 else att
     in if diffuseIntensity <= 0 then Vec3 0 0 0
-       else multScaler (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
+       else multScalar (mult diffuse light_col) (diffuseIntensity * kd * (1.0 / attenuation))
 
 calcSpecular :: Double -> Double -> Ray -> Vec3 -> Vec3 -> Color
 calcSpecular ks alpha (Ray _ dir) light_dir normal
-  | ks <= 0 = Vec3 0 0 0
+  | ks <= 0   = Vec3 0 0 0
   | otherwise =
-  let n_dir = normalize light_dir
+  let n_dir             = normalize light_dir
       specularIntensity = (dot normal (normalize (minus n_dir dir))) ** alpha
   in if specularIntensity <= 0 then Vec3 0 0 0
-     else multScaler (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
+     else multScalar (Vec3 1.0 1.0 1.0) (specularIntensity * ks)
 
 getSurfaceParam :: [Surface] -> Int -> PhongCoef
 -- TODO: partial !! when [Surface] is []
@@ -50,7 +50,7 @@ lit ray intersectPt intersectObj objs surfaces pigments light@(Light pos _ _)
         diffuseCol = calcDiffuse kd ray light light_dir diffuse normal
         specularCol = calcSpecular ks alpha ray light_dir normal
         n_dir = normalize light_dir
-        shadow_ray = Ray (plus intersectPt (multScaler n_dir 0.01)) n_dir
+        shadow_ray = Ray (plus intersectPt (multScalar n_dir 0.01)) n_dir
         visible = checkVisible shadow_ray intersectPt light objs
     in if visible then plus diffuseCol specularCol
        else Vec3 0 0 0
@@ -61,8 +61,8 @@ phong _ _ _ _ [] _ _
   = Vec3 0.5 0.5 0.5
 phong ray intersectPt intersectObj objs lights surfaces pigments
   = foldr plus initColor (map litColor (tail lights)) where
-      initColor  = multScaler (getCol (head lights)) (0.1 * getKa (getPhongCoef (surfaces !! (getNf intersectObj))))
-      litColor = lit ray intersectPt intersectObj objs surfaces pigments
+      initColor  = multScalar (getCol (head lights)) (0.1 * getKa (getPhongCoef (surfaces !! (getNf intersectObj))))
+      litColor   = lit ray intersectPt intersectObj objs surfaces pigments
 
 checkIntersect :: Ray -> [Object] -> Maybe (Object, Double)
 checkIntersect _ []             = Nothing
@@ -79,23 +79,23 @@ reflection (Ray _ direction) intersectPt intersectObj objs lights surfaces pigme
   let normal         = getNormal intersectObj intersectPt
       kr             = getKr (surfaces !! (getNf intersectObj))
       reflection_dir = normalize (reflect direction normal)
-      reflection_ray = Ray (plus intersectPt (multScaler reflection_dir 0.01)) reflection_dir
-  in if kr > 0 then multScaler (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.002
+      reflection_ray = Ray (plus intersectPt (multScalar reflection_dir 0.01)) reflection_dir
+  in if kr > 0 then multScalar (trace reflection_ray objs lights surfaces pigments (depth + 1)) 0.002
      else Vec3 0 0 0
 
 refraction :: Ray -> Point -> Object -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 refraction (Ray _ direction) intersectPt intersectObj objs lights surfaces pigments depth =
   let normal         = getNormal intersectObj intersectPt
       isIn           = dot normal direction > 0
-      new_normal     = if isIn then (multScaler normal (-1)) else normal
+      new_normal     = if isIn then (multScalar normal (-1)) else normal
       kt             = getKt (surfaces !! (getNf intersectObj))
       ki             = getKi (surfaces !! (getNf intersectObj))
       n              = if isIn then ki else 1 / ki
       c1             = (-1) * (dot direction new_normal)
       c2             = 1 - (n * n * (1 - c1 * c1))
-      refraction_dir = normalize (plus (multScaler direction n) (multScaler new_normal (n * c1 - sqrt(c2))))
-      refraction_ray = Ray (plus intersectPt (multScaler refraction_dir 0.01)) refraction_dir
-  in if kt > 0 then multScaler (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
+      refraction_dir = normalize (plus (multScalar direction n) (multScalar new_normal (n * c1 - sqrt(c2))))
+      refraction_ray = Ray (plus intersectPt (multScalar refraction_dir 0.01)) refraction_dir
+  in if kt > 0 then multScalar (trace refraction_ray objs lights surfaces pigments (depth + 1)) 0.003
      else Vec3 0 0 0
 
 -- TODO: phong might still have some overflow in color computation, causing reflection and refraction needs to use different parameters
@@ -106,7 +106,7 @@ shader ray@(Ray origin direction) objs lights surfaces pigments depth
   = case checkIntersect ray objs of
     Nothing                 -> Vec3 0.5 0.5 0.5
     Just (min_obj, min_pos) -> plus3 phongCol reflectCol refractCol where
-      point      = plus origin (multScaler direction min_pos)
+      point      = plus origin (multScalar direction min_pos)
       phongCol   = phong ray point min_obj objs lights surfaces pigments
       reflectCol = reflection ray point min_obj objs lights surfaces pigments depth
       refractCol = refraction ray point min_obj objs lights surfaces pigments depth
@@ -115,12 +115,12 @@ shader ray@(Ray origin direction) objs lights surfaces pigments depth
 trace :: Ray -> [Object] -> [Light] -> [Surface] -> [Pigment] -> Int -> Color
 trace ray@(Ray _ _) objs lights surfaces pigments depth =
   if depth > 20 then Vec3 127.5 127.5 127.5
-  else clampVec (multScaler (shader ray objs lights surfaces pigments depth) 255) (Vec3 0 0 0) (Vec3 255 255 255)
+  else clampVec (multScalar (shader ray objs lights surfaces pigments depth) 255) (Vec3 0 0 0) (Vec3 255 255 255)
 
 -- Perform view transformation similar to glm::lookAt
 viewTransform :: Camera -> Vector3 Vec3
 viewTransform (Camera pos at up _) = Vector3 cx cy cz where
-  cz = multScaler (normalize (minus at pos)) (-1)
+  cz = multScalar (normalize (minus at pos)) (-1)
   cx = normalize (cross up cz)
   cy = cross cz cx
 
@@ -136,7 +136,7 @@ constructRay image@(Image img_width img_height) (r, c) camera@(Camera pos _ _ _)
         (Vector2 width height) = getViewDimension image camera
         pc  = (((fromIntegral c :: Double) / (fromIntegral img_width :: Double)) - 0.5) * width
         pr  = (0.5 - ((fromIntegral r :: Double) / (fromIntegral img_height :: Double))) * height
-        dir = normalize (plus3 (multScaler cx pc) (multScaler cy pr) (multScaler cz (-1)))
+        dir = normalize (plus3 (multScalar cx pc) (multScalar cy pr) (multScalar cz (-1)))
     in Ray pos dir
 
 -- Given the Image width and height, the View Coordinates, camera fovy angle, internally call trace function and returns a matrix(2D array) of image_data.
@@ -147,4 +147,4 @@ sendRay image@(Image img_width img_height) camera objects lights surfaces pigmen
                                                        x <- [0..img_height - 1]
                                                      , y <- [0..img_width - 1]
                                                      , let ray = constructRay image (x, y) camera
-                                                     , let c = trace ray objects lights surfaces pigments 0]
+                                                     , let c   = trace ray objects lights surfaces pigments 0]
