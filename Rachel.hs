@@ -134,8 +134,8 @@ getNormal (Plane (Vec4 a b c _) _ _) _ = normalize $ Vec3 a b c
 -- ========================================================================
 -- TODO: Change function names to match the actual arguments
 -- Given the matrix(2D array) of image_data, produce image in PPM P6 format
-write_ppm6 :: String -> Image -> Array (Int, Int) Color -> IO()
-write_ppm6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
+writePPM6 :: String -> Image -> Array (Int, Int) Color -> IO()
+writePPM6 str img mat = writePPM str img (doublesToWords (matrixToList mat))
 
 stringPPM :: Image -> [(Word8,Word8,Word8)] -> BIN.ByteString
 stringPPM image ps =

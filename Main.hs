@@ -29,4 +29,4 @@ main = do
       surfaces = readSurfaces sfInputs
       objects  = readObjects objInputs
       img_data = sendRay image camera objects lights surfaces pigments
-  write_ppm6 fileName image img_data
+  writePPM6 fileName image img_data
